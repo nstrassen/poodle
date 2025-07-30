@@ -1,99 +1,56 @@
 import os
+import time
 
-import openai
-from together import Together
+from data.imdb.reduced_imdb import get_plain_imdb_data
+from llms.api_call_and_prompts import classify_review
+from util.costants import *
+from util.files import save_dict_to_json, load_dict_from_json
 
-OPEN_AI_MODELS = ["gpt-3.5-turbo", "gpt-4"]
-TOGETHER_MODELS = ["meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"]
-
-WRAPPER_PROMPT = """
-You are a powerful language model. You are given a user request consisting of a system prompt and a user message.
-Your task is as follows:
-
-1. Identify the type of input the user is providing: one of ["text", "image", "table", "other"]
-2. Infer what task you are expected to perform, choosing from: 
-   ["sentiment classification", "summarization", "translation", "question answering", "information extraction", "topic modeling", "other"]
-3. Solve the task that the user is giving you and put your response in a separate field called "user_response" which is in JSON format
-
-Respond with a JSON object containing:
-- "input_type"
-- "task_type"
-- "user_response" (JSON describing user response)
-"""
+dataset_paths = {
+    TRAIN: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train",
+    TRAIN_100: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train-100",
+    TRAIN_1000: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train-1000",
+    TEST: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test",
+    TEST_100: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test-100",
+    TEST_1000: "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test-1000"
+}
 
 
-def _base_messages(review_text, system_prompt):
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"REVIEW: {review_text}"}
-    ]
-    return messages
+def imdb_100_inference():
 
 
-def _wrapped_messages(messages):
-    messages = [
-        {"role": "system", "content": WRAPPER_PROMPT},
-        {"role": "user", "content": f"USER REQUEST: {str(messages)}"}
-    ]
-    return messages
+    train_texts, train_labels = get_plain_imdb_data(dataset_paths[TRAIN])
+
+    print("test")
 
 
-def openAI_classify_review(system_prompt, review_text, model_name, collect_statistics=True):
-    messages = _base_messages(review_text, system_prompt)
+def imdb_1000_statistics():
 
-    if collect_statistics:
-        messages = _wrapped_messages(messages)
+    train_texts, train_labels = get_plain_imdb_data(dataset_paths[TRAIN_1000])
+    test_texts, test_labels = get_plain_imdb_data(dataset_paths[TEST_1000])
 
-    response = openai.ChatCompletion.create(
-        model=model_name,
-        messages=messages,
-        temperature=0,
-        # response_format="json" only works with latest API and most recent models
-    )
-    raw_output = response['choices'][0]['message']['content'].strip()
-    return raw_output
+    calc_avg_word_count(train_texts)
+    calc_avg_word_count(test_texts)
 
 
-def together_classify_review(system_prompt, review_text, model_name, collect_statistics=True):
-    client = Together()
+def calc_avg_word_count(train_texts):
+    word_count = 0
+    for text in train_texts:
+        word_count += len(text.split())
+    avg_word_count = word_count / len(train_texts)
+    print("avg word count: ", avg_word_count)
+    return avg_word_count
 
-    messages = _base_messages(review_text, system_prompt)
+def get_average_sample():
+    train_texts, train_labels = get_plain_imdb_data(dataset_paths[TRAIN_1000])
+    avg_word_count = calc_avg_word_count(train_texts)
+    for text, label in zip(train_texts, train_labels):
+        word_count = len(text.split())
+        print(word_count)
+        if word_count - 5 < avg_word_count < word_count + 5:
+            return text, label
 
-    if collect_statistics:
-        messages = _wrapped_messages(messages)
-
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=0
-    )
-
-    return response.choices[0].message.content.strip()
-
-
-def classify_review(system_prompt, review_text, model_name, collect_statistics=True):
-    if model_name in OPEN_AI_MODELS:
-        return openAI_classify_review(system_prompt, review_text, model_name, collect_statistics=collect_statistics)
-    else:
-        return together_classify_review(system_prompt, review_text, model_name, collect_statistics=collect_statistics)
-
-
-def together_test():
-    client = Together()
-
-    response = client.chat.completions.create(
-        model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-        messages=[
-            {
-                "role": "user",
-                "content": "What is 3+4, reply in one word"
-            }
-        ]
-    )
-    print(response.choices[0].message.content)
-
-
-if __name__ == '__main__':
+def trigger_together_ai_comparison(text):
     api_key = os.getenv("TOGETHER_API_KEY")
     print(api_key)
 
@@ -104,15 +61,44 @@ if __name__ == '__main__':
         "Only respond in this exact JSON format: {\"sentiment\": \"positive\"} or {\"sentiment\": \"negative\"}. "
         "Do not provide any explanation or additional text."
     )
-    review_text = "I was completely bored the entire time. The acting was flat and the plot was nonsensical."
-
-    # example of how to use openAI (currently we do not have an API key, but can try the code in a Notebook in Coursera course)
-    # https://learn.deeplearning.ai/courses/chatgpt-prompt-eng/lesson/tyucw/inferring
-    # model_name = "gpt-3.5-turbo"
-    # response = classify_review(system_prompt, review_text, model_name, collect_statistics=True)
-    # print(f"RESPONSE FROM OpenAI ({model_name}):\n {response}")
+    review_text = text
 
     # chose this model because currently it seems to be free
     model_name = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
-    response = classify_review(system_prompt, review_text, model_name, collect_statistics=True)
-    print(f"RESPONSE FROM TogetherAI ({model_name}):\n {response}")
+
+
+    # first inference without wrapper prompt for statistics collection
+    response = classify_review(system_prompt, review_text, model_name, wrapper_prompt=False)
+    save_dict_to_json(response, "non-wrapped-response.json")
+    print(f"RESPONSE FROM TogetherAI ({model_name}):\n {response[RAW_OUTPUT]}")
+
+    # sleep for 2 min to have gap in dashboard
+    time.sleep(120)
+
+    # second inference with wrapper prompt for statistics collection
+    response = classify_review(system_prompt, review_text, model_name, wrapper_prompt=True)
+    print(f"RESPONSE FROM TogetherAI ({model_name}):\n {response[RAW_OUTPUT]}")
+    save_dict_to_json(response, "wrapped-response.json")
+
+def analysis():
+    non_wrapped = load_dict_from_json("non-wrapped-response.json")
+    wrapped = load_dict_from_json("wrapped-response.json")
+
+    TOKEN_WORD_FAC = 1.3
+
+    print("NON WRAPPED")
+    print(f"approximated tokens:\n{int(len(str(non_wrapped[SENT_MESSAGES]).split()) * TOKEN_WORD_FAC)}")
+
+    print("WRAPPED")
+    print(f"approximated tokens:\n{int(len(str(wrapped[SENT_MESSAGES]).split()) * TOKEN_WORD_FAC)}")
+
+
+
+if __name__ == '__main__':
+    # imdb_1000_statistics()
+    # text, label = get_average_sample()
+    # print(text)
+    # print(label)
+    # trigger_together_ai_comparison(text)
+
+    analysis()

@@ -108,6 +108,12 @@ def get_imbdb_bert_base_uncased_datasets(data_path):
     return CustomTensorDataset(encodings['input_ids'], encodings['attention_mask'], labels)
 
 
+def get_plain_imdb_data(data_path):
+    base_path = os.path.join(data_path, f"bert-base-uncased-cached")
+
+    return load_imdb_data(data_path)
+
+
 def _get_encodings_and_labels(tokenizer, texts, labels):
     encodings = tokenizer(texts, truncation=True, padding=True, max_length=256, return_tensors='pt')
     labels = torch.tensor(labels)
@@ -123,7 +129,9 @@ def _reduced_data(indices, texts, labels):
 
 
 if __name__ == '__main__':
-    create_sub_dataset(
-        "/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 3)
+    # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 100)
+    # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test", 100)
+    create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 1000)
+    create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test", 1000)
 
     print("test")
