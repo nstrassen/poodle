@@ -13,12 +13,12 @@ Your task is as follows:
 1. Identify the type of input the user is providing: one of ["text", "image", "table", "other"]
 2. Infer what task you are expected to perform, choosing from: 
    ["sentiment classification", "summarization", "translation", "question answering", "information extraction", "topic modeling", "other"]
-3. Solve the task that the user is giving you and put your response in a separate field called "user-response" which can be in JSON format
+3. Solve the task that the user is giving you and put your response in a separate field called "user_response" which is in JSON format
 
 Respond with a JSON object containing:
 - "input_type"
 - "task_type"
-- "user-response" (JSON describing user response)
+- "user_response" (JSON describing user response)
 """
 
 
