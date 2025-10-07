@@ -45,15 +45,17 @@ class CustomTensorDataset(TensorDataset):
         return self.tensors[0].size(0)
 
 
-def load_imdb_data(path):
+def load_imdb_data(path, include_file_names=False):
     texts = []
     labels = []
+    file_names = []
 
     for label in ['pos', 'neg']:
         label_path = os.path.join(path, label)
         print(f'Checking directory: {label_path}')
         if os.path.exists(label_path):
             for filename in tqdm(os.listdir(label_path), desc=f'Loading {label} reviews'):
+                file_names.append(filename)
                 with open(os.path.join(label_path, filename), 'r', encoding='utf-8') as file:
                     text = file.read()
                     texts.append(text)
@@ -61,7 +63,10 @@ def load_imdb_data(path):
         else:
             print(f'Directory not found: {label_path}')
 
-    return texts, labels
+    if include_file_names:
+        return texts, labels, file_names
+    else:
+        return texts, labels
 
 
 def create_sub_dataset(dataset_path: str, size: int):
@@ -83,6 +88,41 @@ def create_sub_dataset(dataset_path: str, size: int):
                 shutil.copy2(file, dst_path)
 
     return new_dataset_base_path
+
+
+def create_dataset_splits(dataset_path: str, split_size: int):
+    split_index = 0
+    random.seed(42)  # ensure reproducibility
+
+    all_pos_file_paths = get_all_file_paths_per_label(dataset_path, 'pos')
+    all_neg_file_paths = get_all_file_paths_per_label(dataset_path, 'neg')
+
+    random.shuffle(all_pos_file_paths)
+    random.shuffle(all_neg_file_paths)
+
+    while len(all_pos_file_paths) >= split_size and len(all_neg_file_paths) >= split_size:
+        new_dataset_base_path = dataset_path + f'-{split_size * 2}-{split_index}'
+        pos_split = all_pos_file_paths[:split_size]
+        all_pos_file_paths = all_pos_file_paths[split_size:]
+        neg_split = all_neg_file_paths[:split_size]
+        all_neg_file_paths = all_neg_file_paths[split_size:]
+
+        for label, sampled_files in zip(['pos', 'neg'], [pos_split, neg_split]):
+            dst_path = os.path.join(new_dataset_base_path, label)
+            os.makedirs(dst_path)
+            for file in sampled_files:
+                shutil.copy2(file, dst_path)
+
+        split_index += 1
+
+
+def get_all_file_paths_per_label(dataset_path, label):
+    files_paths = []
+    label_path = os.path.join(dataset_path, label)
+    for filename in tqdm(os.listdir(label_path), desc=f'Loading {label} reviews'):
+        files_paths.append(os.path.join(label_path, filename))
+
+    return files_paths
 
 
 def get_imbdb_bert_base_uncased_datasets(data_path):
@@ -129,9 +169,14 @@ def _reduced_data(indices, texts, labels):
 
 
 if __name__ == '__main__':
+    root_data_path = '/tmp/pycharm_project_761/data'
     # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 100)
     # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test", 100)
-    create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 1000)
-    create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test", 1000)
+    # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/train", 1000)
+    # create_sub_dataset("/Users/nils/uni/programming/jit-LLM/data/imdb/data/aclImdb/test", 1000)
+    train_path = os.path.join(root_data_path, "imdb/data/aclImdb/train")
+    test_path = os.path.join(root_data_path, "imdb/data/aclImdb/test")
+    create_dataset_splits(os.path.join(train_path), 250)
+    create_dataset_splits(os.path.join(test_path), 250)
 
     print("test")
