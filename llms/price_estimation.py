@@ -92,6 +92,7 @@ def collect_comparison_data(request_range_range, large_model, small_model):
 
 
 def plot_price_savings(request_range_range, large_model, small_model):
+
     base_prices, optimized_prices = collect_comparison_data(request_range_range, large_model, small_model)
 
     requests = list(request_range_range)
@@ -100,20 +101,16 @@ def plot_price_savings(request_range_range, large_model, small_model):
         for n in requests
     ]
 
-    plt.figure(figsize=(10, 6))
+    plt.rcParams.update({'font.size': 22})
+    plt.figure(figsize=(4, 6))
     plt.plot([n // 1000 for n in requests], savings, marker='o', color='blue')
-    plt.xlabel("Number of Requests (Thousands)")
+    plt.xlabel("# Requests (Thous.)")
     plt.axhline(0, color='gray', linestyle='--', linewidth=1)
     plt.ylabel("Price Savings ($)")
-    plt.title(f"Price Savings: {large_model} vs Optimized ({small_model})")
+    # plt.title(f"Price Savings: {large_model} vs Optimized ({small_model})")
     plt.tight_layout()
-    plt.savefig(f"price_savings_{large_model}_vs_{small_model}.png")
+    plt.savefig(f"price_savings_{large_model}_vs_{small_model}.pdf")
     plt.show()
-
-# if __name__ == '__main__':
-    # request_range = [1000, 5000, 10000, 20000, 50000, 100000, 500000, 1000000]
-    # for model in [LLAMA_70B_TURBO, GPT_4_1, LLAMA_405B_TURBO, GPT_4_1_MINI, GPT_4_1_NANO]:
-    #     plot_price_savings(request_range, model, BERT_80M)
 
 
 if __name__ == '__main__':
@@ -121,15 +118,15 @@ if __name__ == '__main__':
     output_tokens = 8
     wrapped_input_tokens = 590
     wrapped_output_tokens = 40
-    num_requests = 10000
+    num_requests = 1000000
     switch_after_n_items = 5000
     # for model_id in [BERT_80M, LLAMA_8B, LLAMA_70B_TURBO, LLAMA_405B_TURBO, GPT_4_1, GPT_4_1_MINI, GPT_4_1_NANO]:
     #     for model_id in [BERT_80M, LLAMA_8B, LLAMA_70B_TURBO, LLAMA_405B_TURBO, GPT_4_1, GPT_4_1_MINI, GPT_4_1_NANO]:
     #         price = base_price_estimation(input_tokens, output_tokens, num_requests, model_id)
     #     print(f"{model_id}: {price:.2f}$")
 
-    # for large_model, small_model in [(GPT_4_1_MINI, BERT_80M), (GPT_4_1, BERT_80M), (LLAMA_8B, BERT_80M), (LLAMA_70B_TURBO, BERT_80M), (LLAMA_405B_TURBO, BERT_80M)]:
-    for large_model, small_model in [(GPT_4_1, BERT_80M)]:
+    for large_model, small_model in [(GPT_4_1_NANO, BERT_80M), (GPT_4_1_MINI, BERT_80M), (GPT_4_1, BERT_80M), (LLAMA_8B, BERT_80M), (LLAMA_70B_TURBO, BERT_80M), (LLAMA_405B_TURBO, BERT_80M)]:
+    # for large_model, small_model in [(GPT_4_1, BERT_80M)]:
         large_config = {INPUT_TOKENS: input_tokens, OUTPUT_TOKENS: output_tokens, MODEL_ID: large_model}
         small_config = {INPUT_TOKENS: wrapped_input_tokens, OUTPUT_TOKENS: wrapped_output_tokens, MODEL_ID: small_model}
 
@@ -139,4 +136,13 @@ if __name__ == '__main__':
         combined_price = combined_price_estimation(large_config, small_config, num_requests, switch_after_n_items)
         print(f"base: {base_price:.2f}$")
         print(f"combined: {combined_price:.2f}$")
+        print(f"difference: {base_price - combined_price:.2f}$")
         print(f"factor: {base_price / combined_price:.2f}x")
+
+    request_range_model_pairs = [
+        (GPT_4_1_NANO, [5000, 10000, 20000, 40000, 80000, 160000]),
+        (GPT_4_1, [1000, 2000, 4000, 8000, 16000]),
+        (LLAMA_405B_TURBO, [1000, 2000, 4000, 8000, 16000]),
+    ]
+    for model, requests in request_range_model_pairs:
+        plot_price_savings(requests, model, BERT_80M)
