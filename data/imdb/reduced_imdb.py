@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import shutil
@@ -45,10 +46,24 @@ class CustomTensorDataset(TensorDataset):
         return self.tensors[0].size(0)
 
 
-def load_imdb_data(path, include_file_names=False):
+def get_llm_labels(path):
+    json_path = os.path.join(path, "llm_predictions.json")
+    with open(json_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    llm_predictions = data.get("llm_predictions", [])
+    llm_labels = {prediction["file"]: prediction["llm_label"] for prediction in llm_predictions}
+
+    return llm_labels
+
+
+def load_imdb_data(path, include_file_names=False, use_llm_labels=False):
     texts = []
     labels = []
     file_names = []
+
+    if use_llm_labels:
+        llm_labels = get_llm_labels(path)
 
     for label in ['pos', 'neg']:
         label_path = os.path.join(path, label)
@@ -59,7 +74,10 @@ def load_imdb_data(path, include_file_names=False):
                 with open(os.path.join(label_path, filename), 'r', encoding='utf-8') as file:
                     text = file.read()
                     texts.append(text)
-                    labels.append(1 if label == 'pos' else 0)
+                    if use_llm_labels:
+                        labels.append(llm_labels[os.path.basename(filename)])
+                    else:
+                        labels.append(1 if label == 'pos' else 0)
         else:
             print(f'Directory not found: {label_path}')
 

@@ -8,15 +8,35 @@ from transformers import BertTokenizer, BertForSequenceClassification, get_sched
 
 from data.imdb.reduced_imdb import load_imdb_data
 
-if __name__ == '__main__':
-    # TODO write logic to combine splits as well
-    root_data_path = '/tmp/pycharm_project_761/data'
-    # ----- 1. Load your IMDB data -----
-    train_path = os.path.join(root_data_path, "imdb/data/aclImdb/train-500-0")  # update this path
-    test_path = os.path.join(root_data_path, "imdb/data/aclImdb/test-500-0")
+GROUND_TRUTH = "GROUND_TRUTH"
+LLM = "LLM"
 
-    train_texts, train_labels = load_imdb_data(train_path)
-    test_texts, test_labels = load_imdb_data(test_path)
+if __name__ == '__main__':
+    number_of_splits = 10
+    root_data_path = f"/mount-fs/poodle/labeled-data/imdb/"
+    # label_method = GROUND_TRUTH
+    label_method = LLM
+
+
+    # ----- 1. Load IMDB data -----
+    train_texts, train_labels = [], []
+    test_texts, test_labels = [], []
+
+    for split_idx in range(number_of_splits):
+        for split_type in ["train", "test"]:
+            data_path = os.path.join(root_data_path, f"{split_type}-500-splits",f"{split_type}-500-{split_idx}")
+            if label_method == LLM:
+                texts, labels = load_imdb_data(data_path, use_llm_labels=True)
+            else:
+                texts, labels = load_imdb_data(data_path)
+
+            if split_type == "train":
+                train_texts.extend(texts)
+                train_labels.extend(labels)
+            else:
+                test_texts.extend(texts)
+                test_labels.extend(labels)
+
 
     # ----- 2. Tokenize data -----
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
