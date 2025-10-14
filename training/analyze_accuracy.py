@@ -28,9 +28,12 @@ def analyze_accuracy_per_file(files):
 
 
 if __name__ == '__main__':
-    for split in ["train", "test"]:
-        root_train_path = f"/mount-fs/poodle/labeled-data/imdb/{split}-500-splits"
-        train_paths = [os.path.join(root_train_path, f"{split}-500-{i}", "llm_predictions.json") for i in range(50)]
-        train_results = analyze_accuracy_per_file(train_paths)
-        print(f"{split} results", train_results)
-        print(f"avg {split} accuracy", mean(list(train_results.values())))
+    for num_splits in [1, 2, 4, 10, 50]:
+        for split in ["train", "test"]:
+            root_train_path = f"/mount-fs/poodle/labeled-data/imdb/{split}-500-splits"
+            train_paths = [os.path.join(root_train_path, f"{split}-500-{i}", "llm_predictions.json") for i in range(num_splits)]
+            train_results = analyze_accuracy_per_file(train_paths)
+            print(f"{split} results", train_results)
+            print(f"avg {split} accuracy ({num_splits * 500} items)", mean(list(train_results.values())))
+            print()
+            print()

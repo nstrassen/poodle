@@ -1,12 +1,20 @@
 import os
-
+import json
+import matplotlib.pyplot as plt
 import torch
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from transformers import BertTokenizer, BertForSequenceClassification, get_scheduler
+import time
 
 from data.imdb.reduced_imdb import load_imdb_data
+
+# Results directory for outputs and plots
+RESULTS_DIR = "/mount-fs/poodle/train-bert-results"
+os.makedirs(RESULTS_DIR, exist_ok=True)
+
+
 
 GROUND_TRUTH = "GROUND_TRUTH"
 LLM = "LLM"
@@ -64,9 +72,11 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
     indices = torch.randperm(len(train_encodings["input_ids"]))
     train_indices = indices[:num_train]
     val_indices = indices[num_train:]
+
     # Helper function to index encodings
     def select_encodings(encodings, idxs):
         return {k: v[idxs] for k, v in encodings.items()}
+
     train_split_encodings = select_encodings(train_encodings, train_indices)
     val_split_encodings = select_encodings(train_encodings, val_indices)
     train_dataset = IMDbDataset(train_split_encodings)
@@ -93,10 +103,19 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
         num_training_steps=num_training_steps,
     )
 
+    # ----- Prepare logging -----
+    results = {
+        "epochs": [],
+        "number_of_splits": number_of_splits,
+        "num_epochs": num_epochs,
+        "batch_size": batch_size,
+    }
+
     # ----- 7. Training Loop -----
     progress_bar = tqdm(range(num_training_steps))
     model.train()
     for epoch in range(num_epochs):
+        epoch_start_time = time.time()
         train_loss = 0.0
         train_correct = 0
         train_total = 0
@@ -137,9 +156,33 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
         avg_val_loss = val_loss / val_steps if val_steps > 0 else 0.0
         val_accuracy = val_correct / val_total if val_total > 0 else 0.0
 
-        print(f"Epoch {epoch+1}/{num_epochs} - "
+        # ----- Test evaluation after each epoch -----
+        test_correct = 0
+        test_total = 0
+        with torch.no_grad():
+            for batch in test_loader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                outputs = model(**batch)
+                predictions = torch.argmax(outputs.logits, dim=-1)
+                test_correct += (predictions == batch["labels"]).sum().item()
+                test_total += batch["labels"].size(0)
+        test_accuracy = test_correct / test_total if test_total > 0 else 0.0
+
+        epoch_duration = time.time() - epoch_start_time
+
+        results["epochs"].append({
+            "train_accuracy": train_accuracy,
+            "val_accuracy": val_accuracy,
+            "test_accuracy": test_accuracy,
+            "train_loss": avg_train_loss,
+            "val_loss": avg_val_loss,
+            "epoch_duration": epoch_duration
+        })
+
+        print(f"Epoch {epoch + 1}/{num_epochs} - "
               f"Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy:.4f} - "
-              f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.4f}")
+              f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.4f} - "
+              f"Test Acc: {test_accuracy:.4f}")
         model.train()
 
     # ----- 8. Evaluation -----
@@ -154,7 +197,15 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
             correct += (predictions == batch["labels"]).sum().item()
             total += batch["labels"].size(0)
     accuracy = correct / total
-    print(f"✅ Test Accuracy: {accuracy:.4f}")
+    print(f"Test Accuracy: {accuracy:.4f}")
+
+    results["test_accuracy"] = accuracy
+
+    json_filename = os.path.join(RESULTS_DIR, f"bert_results_{label_method}_splits{number_of_splits}_epochs{num_epochs}.json")
+    with open(json_filename, 'w') as f:
+        json.dump(results, f, indent=4)
+
+    plot_training_curves(json_filename)
 
     # # ----- 9. Save fine-tuned model -----
     # save_path = "./bert-imdb-finetuned"
@@ -163,21 +214,57 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
     # tokenizer.save_pretrained(save_path)
     # print(f"Model saved to {save_path}")
 
-    return model,accuracy
+    return model, accuracy
+
+
+def plot_training_curves(json_file_path):
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+
+    train_losses = [epoch["train_loss"] for epoch in data["epochs"]]
+    val_losses = [epoch["val_loss"] for epoch in data["epochs"]]
+    train_accuracies = [epoch["train_accuracy"] for epoch in data["epochs"]]
+    val_accuracies = [epoch["val_accuracy"] for epoch in data["epochs"]]
+    test_accuracies = [epoch.get("test_accuracy", 0.0) for epoch in data["epochs"]]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax1.plot(train_losses, label='Train Loss')
+    ax1.plot(val_losses, label='Validation Loss')
+    ax1.set_title('Loss')
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.plot(train_accuracies, label='Train Accuracy')
+    ax2.plot(val_accuracies, label='Validation Accuracy')
+    ax2.plot(test_accuracies, label='Test Accuracy')
+    ax2.set_title('Accuracy')
+    ax2.set_xlabel('Epoch')
+    ax2.set_ylabel('Accuracy')
+    ax2.legend()
+    ax2.grid(True)
+
+    plt.tight_layout()
+    base_name = os.path.splitext(os.path.basename(json_file_path))[0]
+    plot_filename = os.path.join(RESULTS_DIR, f"{base_name}_training_curves.png")
+    plt.savefig(plot_filename)
+    plt.close()
 
 
 if __name__ == '__main__':
     root_data_path = f"/mount-fs/poodle/labeled-data/imdb/"
-    number_of_splits = 4
-    num_epochs = 3
-    batch_size = 8
     model_name = "bert-base-uncased"
+    batch_size = 32
 
-    result = {}
-    for label_method in [LLM, GROUND_TRUTH]:
-        _, accuracy = train_and_evaluate_bert(
-            root_data_path, number_of_splits, num_epochs, label_method, batch_size, model_name)
+    num_epochs = 20
+    for number_of_splits in [1, 2, 4, 10]:
+        result = {}
+        for label_method in [LLM, GROUND_TRUTH]:
+            _, accuracy = train_and_evaluate_bert(
+                root_data_path, number_of_splits, num_epochs, label_method, batch_size, model_name)
 
-        result[label_method] = accuracy
+            result[label_method] = accuracy
 
-    print(result)
+        print(result)
