@@ -1,4 +1,5 @@
 import os
+import time
 
 import openai
 from together import Together
@@ -70,15 +71,19 @@ def together_classify_review(system_prompt, review_text, model_name, wrapper_pro
     if wrapper_prompt:
         messages = _wrapped_messages(messages)
 
+    start_time = time.time()
     response = client.chat.completions.create(
         model=model_name,
         messages=messages,
         temperature=0
     )
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
     result = {
         RAW_OUTPUT: response.choices[0].message.content.strip(),
         SENT_MESSAGES: messages,
+        "latency_sec": elapsed_time
     }
 
     return result
@@ -128,4 +133,4 @@ if __name__ == '__main__':
     # chose this model because currently it seems to be free
     model_name = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
     response = classify_review(system_prompt, review_text, model_name, wrapper_prompt=True)
-    print(f"RESPONSE FROM TogetherAI ({model_name}):\n {response[RAW_OUTPUT]}")
+    print(f"RESPONSE FROM TogetherAI ({model_name}):\n {response}")
