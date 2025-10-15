@@ -118,7 +118,7 @@ if __name__ == '__main__':
     measurement_cycles = 10
 
 
-    # TODO/WARNING: currently we only get consistent result if we
+    # Note: currently we only get consistent result if we
     # 1) use the same text for all batch items
 
     batch_sizes = [1, 2, 4, 8, 16] # 32 out of memory
