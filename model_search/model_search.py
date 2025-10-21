@@ -93,7 +93,6 @@ def score_models(data, model_ids, num_classes, batch_size=32, max_length=512):
 
 if __name__ == '__main__':
     results = {}
-    # TODO test more models
     model_ids = [
         "google-bert/bert-base-uncased",
         "distilbert/distilbert-base-uncased-finetuned-sst-2-english",
