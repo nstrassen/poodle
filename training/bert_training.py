@@ -222,7 +222,7 @@ def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_
     with open(json_filename, 'w') as f:
         json.dump(results, f, indent=4)
 
-    plot_training_curves(json_filename)
+    plot_training_curves(json_filename, results_dir)
 
     # # ----- 9. Save fine-tuned model -----
     # save_path = "./bert-imdb-finetuned"
@@ -234,7 +234,7 @@ def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_
     return model, accuracy
 
 
-def plot_training_curves(json_file_path):
+def plot_training_curves(json_file_path, results_dir):
     with open(json_file_path, 'r') as f:
         data = json.load(f)
 
@@ -265,7 +265,7 @@ def plot_training_curves(json_file_path):
 
     plt.tight_layout()
     base_name = os.path.splitext(os.path.basename(json_file_path))[0]
-    plot_filename = os.path.join(RESULTS_DIR, f"{base_name}_training_curves.png")
+    plot_filename = os.path.join(results_dir, f"{base_name}_training_curves.png")
     plt.savefig(plot_filename)
     plt.close()
 
