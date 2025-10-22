@@ -1,20 +1,22 @@
-import os
 import json
+import os
+import time
+
 import matplotlib.pyplot as plt
 import torch
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import BertTokenizer, BertForSequenceClassification, get_scheduler
-import time
+from transformers import BertTokenizer, BertForSequenceClassification, get_scheduler, AutoTokenizer, \
+    AutoModelForSequenceClassification
 
 from data.imdb.reduced_imdb import load_imdb_data
+
+BERT_BASE_UNCASED = "bert-base-uncased"
 
 # Results directory for outputs and plots
 RESULTS_DIR = "/mount-fs/poodle/train-bert-results"
 os.makedirs(RESULTS_DIR, exist_ok=True)
-
-
 
 GROUND_TRUTH = "GROUND_TRUTH"
 LLM = "LLM"
@@ -56,14 +58,27 @@ def tokenize_texts(tokenizer, texts, labels):
     return encodings
 
 
-def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, label_method=LLM, batch_size=8,
-                            model_name="bert-base-uncased"):
+def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_epochs=3, label_method=GROUND_TRUTH,
+                                       batch_size=8, model_name="bert-base-uncased", results_dir=RESULTS_DIR):
+
+    model_name_out = model_name.replace("/", "#")
+    json_filename = os.path.join(
+        results_dir, f"{model_name_out}_results_{label_method}_splits{number_of_splits}_epochs{num_epochs}.json")
+    if os.path.exists(json_filename):
+        print(f"Results file {json_filename} already exists. Skipping training.")
+        return None
+    else:
+        print(f"Training model {model_name} with {number_of_splits} splits and label method {label_method}...")
+
     # ----- 1. Load IMDB data -----
     train_texts, train_labels, test_texts, test_labels = load_imdb_splits(root_data_path, number_of_splits,
                                                                           label_method)
 
     # ----- 2. Tokenize data -----
-    tokenizer = BertTokenizer.from_pretrained(model_name)
+    if model_name == BERT_BASE_UNCASED:
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
     train_encodings = tokenize_texts(tokenizer, train_texts, train_labels)
     test_encodings = tokenize_texts(tokenizer, test_texts, test_labels)
 
@@ -89,7 +104,10 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
     test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     # ----- 5. Load pretrained BERT -----
-    model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    if model_name == BERT_BASE_UNCASED:
+        model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2, ignore_mismatched_sizes=True)
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, ignore_mismatched_sizes=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -201,7 +219,6 @@ def train_and_evaluate_bert(root_data_path, number_of_splits=10, num_epochs=3, l
 
     results["test_accuracy"] = accuracy
 
-    json_filename = os.path.join(RESULTS_DIR, f"bert_results_{label_method}_splits{number_of_splits}_epochs{num_epochs}.json")
     with open(json_filename, 'w') as f:
         json.dump(results, f, indent=4)
 
@@ -255,14 +272,14 @@ def plot_training_curves(json_file_path):
 
 if __name__ == '__main__':
     root_data_path = f"/mount-fs/poodle/labeled-data/imdb/"
-    model_name = "bert-base-uncased"
+    model_name = BERT_BASE_UNCASED
     batch_size = 32
 
     num_epochs = 20
     for number_of_splits in [1, 2, 4, 10]:
         result = {}
         for label_method in [LLM, GROUND_TRUTH]:
-            _, accuracy = train_and_evaluate_bert(
+            _, accuracy = train_and_evaluate_bert_like_model(
                 root_data_path, number_of_splits, num_epochs, label_method, batch_size, model_name)
 
             result[label_method] = accuracy
