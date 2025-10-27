@@ -34,10 +34,14 @@ class IMDbDataset(torch.utils.data.Dataset):
 
 
 def load_imdb_splits(root_data_path, number_of_splits, label_method):
+    return load_imdb_different_splits(root_data_path, number_of_splits, number_of_splits, label_method)
+
+
+def load_imdb_different_splits(root_data_path, number_of_train_splits, number_of_test_splits, label_method):
     train_texts, train_labels = [], []
     test_texts, test_labels = [], []
-    for split_idx in range(number_of_splits):
-        for split_type in ["train", "test"]:
+    for split_type, number_of_splits in zip(["train", "test"], [number_of_train_splits, number_of_test_splits]):
+        for split_idx in range(number_of_splits):
             data_path = os.path.join(root_data_path, f"{split_type}-500-splits", f"{split_type}-500-{split_idx}")
             if label_method == LLM and split_type == "train":
                 texts, labels = load_imdb_data(data_path, use_llm_labels=True)
@@ -58,21 +62,23 @@ def tokenize_texts(tokenizer, texts, labels):
     return encodings
 
 
-def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_epochs=3, label_method=GROUND_TRUTH,
+def train_and_evaluate_bert_like_model(root_data_path, number_of_train_splits=10, number_of_test_splits=10,
+                                       num_epochs=3, label_method=GROUND_TRUTH,
                                        batch_size=8, model_name="bert-base-uncased", results_dir=RESULTS_DIR):
-
     model_name_out = model_name.replace("/", "#")
     json_filename = os.path.join(
-        results_dir, f"{model_name_out}_results_{label_method}_splits{number_of_splits}_epochs{num_epochs}.json")
+        results_dir,
+        f"{model_name_out}_results_{label_method}_trainsplits{number_of_train_splits}_testsplits{number_of_test_splits}_epochs{num_epochs}.json")
     if os.path.exists(json_filename):
         print(f"Results file {json_filename} already exists. Skipping training.")
         return None
     else:
-        print(f"Training model {model_name} with {number_of_splits} splits and label method {label_method}...")
+        print(
+            f"Training model {model_name} with train_splits={number_of_train_splits}, test_splits={number_of_test_splits} and label method {label_method}...")
 
     # ----- 1. Load IMDB data -----
-    train_texts, train_labels, test_texts, test_labels = load_imdb_splits(root_data_path, number_of_splits,
-                                                                          label_method)
+    train_texts, train_labels, test_texts, test_labels = \
+        load_imdb_different_splits(root_data_path, number_of_train_splits, number_of_test_splits,label_method)
 
     # ----- 2. Tokenize data -----
     if model_name == BERT_BASE_UNCASED:
@@ -107,7 +113,8 @@ def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_
     if model_name == BERT_BASE_UNCASED:
         model = BertForSequenceClassification.from_pretrained(model_name, num_labels=2, ignore_mismatched_sizes=True)
     else:
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, ignore_mismatched_sizes=True)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2,
+                                                                   ignore_mismatched_sizes=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -124,7 +131,8 @@ def train_and_evaluate_bert_like_model(root_data_path, number_of_splits=10, num_
     # ----- Prepare logging -----
     results = {
         "epochs": [],
-        "number_of_splits": number_of_splits,
+        "number_of_train_splits": number_of_train_splits,
+        "number_of_test_splits": number_of_test_splits,
         "num_epochs": num_epochs,
         "batch_size": batch_size,
     }
@@ -280,7 +288,7 @@ if __name__ == '__main__':
         result = {}
         for label_method in [LLM, GROUND_TRUTH]:
             _, accuracy = train_and_evaluate_bert_like_model(
-                root_data_path, number_of_splits, num_epochs, label_method, batch_size, model_name)
+                root_data_path, number_of_splits, 10, num_epochs, label_method, batch_size, model_name)
 
             result[label_method] = accuracy
 

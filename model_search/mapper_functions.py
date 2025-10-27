@@ -1,4 +1,5 @@
 import json
+import time
 
 import torch
 from torch.utils.data import DataLoader
@@ -27,18 +28,42 @@ def evaluate_sst2_on_imdb(sst_model, tokenizer, root_data_path, batch_size=8, ma
     correct = 0
     total = 0
 
+    # Timing variables
+    inference_time_accum = 0.0
+
+    # Ensure any prior async GPU work is finished before starting timing
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+
+    total_start = time.perf_counter()
     with torch.no_grad():
         for batch in test_loader:
             batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Time the model forward pass precisely (sync before/after when using GPU)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t0 = time.perf_counter()
             outputs = sst_model(**batch)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t1 = time.perf_counter()
+            inference_time_accum += (t1 - t0)
+
             predictions = torch.argmax(outputs.logits, dim=-1)
             if mapping_function:
                 predictions = mapping_function(predictions)
             correct += (predictions == batch["labels"]).sum().item()
             total += batch["labels"].size(0)
 
+    # Ensure all GPU work finished before stopping total timer
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    total_end = time.perf_counter()
+
     accuracy = correct / total if total > 0 else 0.0
-    return accuracy
+    total_time = total_end - total_start
+    return accuracy, {"total_time_s": total_time, "inference_time_s": inference_time_accum}
 
 
 def map_yelp_stars_to_imdb(star_ratings):
@@ -69,9 +94,13 @@ if __name__ == '__main__':
         batch_size = 32
         num_splits = 10  # 5000 items
 
+        accuracy, timings = evaluate_sst2_on_imdb(model, tokenizer, root_data_path, batch_size, 512, num_splits,
+                                                 mapping_function=mapping_func)
+        results[model_name] = {
+            "accuracy": accuracy,
+            "timings": timings
+        }
 
-        results[model_name] = evaluate_sst2_on_imdb(model, tokenizer, root_data_path, batch_size, 512, num_splits,
-                                                    mapping_function=mapping_func)
     output_path = "imdb_eval_results.json"
     with open(output_path, "w") as f:
         json.dump(results, f, indent=4)
@@ -80,4 +109,3 @@ if __name__ == '__main__':
 
 #     results
 # {'distilbert/distilbert-base-uncased-finetuned-sst-2-english': 0.8942, 'rttl-ai/bert-base-uncased-yelp-reviews': 0.8932, 'saitejautpala/bert-base-yelp-reviews': 0.8644}
-
