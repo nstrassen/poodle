@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 OUTPUT = "output"
 INPUT = "input"
@@ -102,11 +103,33 @@ def plot_price_savings(request_range_range, large_model, small_model):
     ]
 
     plt.rcParams.update({'font.size': 22})
-    plt.figure(figsize=(4, 6))
-    plt.plot([n // 1000 for n in requests], savings, marker='o', color='blue')
-    plt.xlabel("# Requests (Thous.)")
-    plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+    plt.figure(figsize=(4, 5))
+    x = [n // 1000 for n in requests]
+    # increase marker size for better visibility
+    plt.plot(x, savings, marker='o', color='#43a2ca', linewidth=3, markersize=8)
+    plt.xlabel("Requests (10^3)")
+    plt.axhline(0, color='gray', linestyle='--', linewidth=3)
+
+    # ensure x axis starts at 0 and always shows exactly 3 ticks (starting with 0)
+    x_max = max(x) if x else 0
+    if x_max < 2:
+        x_max = 2
+    # add a tiny bit of space on the right so the last marker isn't cut off
+    padding = max(1, x_max * 0.1)
+    plt.xlim(left=0, right=x_max + padding)
+    plt.xticks(np.linspace(0, x_max, 3))
+
     plt.ylabel("Price Savings ($)")
+
+    # add a small buffer on the y axis so top/bottom markers aren't cut off
+    y_min = min(savings) if savings else 0
+    y_max = max(savings) if savings else 0
+    if y_min == y_max:
+        # ensure visible span for constant data
+        y_max = y_min + 1.0
+    y_padding = max(0.5, (y_max - y_min) * 0.05)
+    plt.ylim(bottom=y_min - y_padding, top=y_max + y_padding)
+
     # plt.title(f"Price Savings: {large_model} vs Optimized ({small_model})")
     plt.tight_layout()
     plt.savefig(f"price_savings_{large_model}_vs_{small_model}.pdf")
