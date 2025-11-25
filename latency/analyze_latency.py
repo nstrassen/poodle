@@ -29,7 +29,7 @@ def items_per_second(latencies):
 
 
 if __name__ == '__main__':
-    base_path = "/Users/nils/uni/programming/jit-LLM/results/latency-experiments/"
+    base_path = "results/latency-experiments/"
     bert_latencies = get_latency_summary(os.path.join(base_path, "bert"), [1, 2, 4, 8, 16, 32, 64, 128])
     llm_latencies = get_latency_summary(os.path.join(base_path, "llm"), [1, 2, 4, 8, 16])
     print("bert latencies", bert_latencies)

@@ -42,9 +42,9 @@ def sample_data():
     # Example times in seconds for a few approaches/models
     return [
         {"approach": "Baseline", "label_seconds": 385, "search_seconds": 0, "fine_tune_seconds": 280, "accuracy": 0.89},
-        {"approach": "Naive Search", "label_seconds": 385, "search_seconds": 2800, "fine_tune_seconds": 0, "accuracy": 0.92},
-        {"approach": "Search (500)", "label_seconds": 38, "search_seconds": 60, "fine_tune_seconds": 70, "accuracy": 0.91},
-        {"approach": "Search (5000)", "label_seconds": 385, "search_seconds": 60, "fine_tune_seconds": 280, "accuracy": 0.92},
+        {"approach": "S-naive", "label_seconds": 385, "search_seconds": 2800, "fine_tune_seconds": 0, "accuracy": 0.92},
+        {"approach": "S-500", "label_seconds": 38, "search_seconds": 60, "fine_tune_seconds": 70, "accuracy": 0.91},
+        {"approach": "S-5000", "label_seconds": 385, "search_seconds": 60, "fine_tune_seconds": 280, "accuracy": 0.92},
     ]
 
 
@@ -82,43 +82,102 @@ def plot_stack(rows: List[Dict], out_path: str = "timings.png"):
     totals_min = [labels_min[i] + searches_min[i] + fines_min[i] for i in range(len(rows))]
 
     x = range(len(approaches))
-    fig, ax = plt.subplots(figsize=(max(5, len(approaches) * 1.2), 3))
 
-    p1 = ax.bar(x, labels_min, label="Label items", color=colors[0])
-    p2 = ax.bar(x, searches_min, bottom=labels_min, label="Model search", color=colors[1])
+    # Create a broken y-axis: bottom shows 0-15 minutes, top shows 40 -> max
+    # make figure much shorter so the plotted axes occupy only a small fraction
+    # of the vertical space (plot area appears "thin" — roughly 1/3 of total height)
+    # keep some relative difference between top/bottom subplots, but keep them compact
+    fig, (ax_top, ax_bottom) = plt.subplots(
+        2, 1, sharex=True,
+        figsize=(5,2),  # width, height in inches
+        gridspec_kw={"height_ratios": [0.4, 1]}
+    )
+
+    # Plot the same stacked bars on both axes; clipping will hide out-of-range parts
+    p1b = ax_bottom.bar(x, labels_min, label="Label items", color=colors[0])
+    p2b = ax_bottom.bar(x, searches_min, bottom=labels_min, label="Model search", color=colors[1])
     bottom_for_fines = [labels_min[i] + searches_min[i] for i in range(len(labels_min))]
-    p3 = ax.bar(x, fines_min, bottom=bottom_for_fines, label="Fine-tuning", color=colors[2])
+    p3b = ax_bottom.bar(x, fines_min, bottom=bottom_for_fines, label="Fine-tuning", color=colors[2])
 
-    ax.set_ylabel("Time (minutes)")
-    ax.set_xticks(list(x))
-    ax.set_xticklabels(approaches, rotation=30, ha="right")
+    p1t = ax_top.bar(x, labels_min, color=colors[0])
+    p2t = ax_top.bar(x, searches_min, bottom=labels_min, color=colors[1])
+    p3t = ax_top.bar(x, fines_min, bottom=bottom_for_fines, color=colors[2])
+
+    # removed leftover `ax` reference (use ax_bottom / ax_top instead)
+
+    # ensure bottom axis shows ticks/labels (0-15 plot)
+    ax_bottom.set_xticks(list(x))
+    ax_bottom.set_xticklabels(approaches)
+    # explicitly enable bottom ticks/labels to avoid them being hidden by shared-x behavior
+    ax_bottom.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True, labeltop=False)
+
+    # top subplot: do not show x tick labels or tick marks (do not clear shared ticks)
+    ax_top.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False, labeltop=False)
+
+    # removed fixed-position fig.text; we will place the joint y-label after layout
 
     # remove secondary axis; instead annotate accuracy above each stacked bar
     # use explicit legend handles ordered to match the stacked bars (top -> bottom)
-    label_handle = p1[0]
-    search_handle = p2[0]
-    fine_handle = p3[0]
-    ax.legend([fine_handle, search_handle, label_handle], ["Fine-tuning", "Model search", "Label items"], loc="upper right")
+    label_handle = p1b[0]
+    search_handle = p2b[0]
+    fine_handle = p3b[0]
+    # place legend immediately to the right of the top plot (minimal gap)
+    ax_top.legend(
+        [fine_handle, search_handle, label_handle],
+        ["Fine-tuning", "Model search", "Label items"],
+        loc="center left",
+        # lowered the vertical anchor so the legend sits a bit down
+        bbox_to_anchor=(1.005, 0),
+        bbox_transform=ax_top.transAxes,
+        ncol=1,
+        frameon=False,
+        borderaxespad=0.0,
+        handletextpad=0.4,
+        columnspacing=0.6,
+    )
 
     # Add a small headroom above the highest bar so title/text doesn't overlap
     max_total = max(totals_min) if totals_min else 0.0
     headroom = max_total * 0.12 if max_total > 0 else 0.1
-    ax.set_ylim(0, max_total + headroom)
+    # Configure broken y-limits:
+    low_top = 12.0
+    high_bottom = 45.0
+    top_ylim_upper = 55
+    ax_bottom.set_ylim(0, low_top)
+    ax_top.set_ylim(high_bottom, top_ylim_upper)
+
+    # Hide the spines between the two axes and add diagonal break marks
+    ax_top.spines['bottom'].set_visible(False)
+    ax_bottom.spines['top'].set_visible(False)
+    ax_top.tick_params(labeltop=False)  # no duplicate top labels
+    d = .010  # slightly smaller diagonal markers (works better with reduced gap)
+    kwargs = dict(transform=ax_top.transAxes, color='k', clip_on=False)
+    ax_top.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax_top.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+    kwargs.update(transform=ax_bottom.transAxes)
+    ax_bottom.plot((-d, +d), (1 - d, 1 + d), **kwargs)        # bottom-left diagonal
+    ax_bottom.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
 
     # annotate accuracy (as percentage) above each bar
-    offset = max_total * 0.03 if max_total > 0 else 0.02
-    for i, acc in enumerate(accuracies):
-        if acc is None:
-            continue
-        y = totals_min[i] + offset
-        # ax.text(i, y, f"{acc * 100:.1f}% acc.", ha="center", va="bottom", fontsize=9, color="black")
-
-    # increase padding between title and top of plot
-    ax.set_title("Timing breakdown per approach", pad=18)
+    # accuracy annotations removed — no text labels above bars
 
     plt.tight_layout()
-    plt.savefig(f"{out_path}.png")
-    plt.savefig(f"{out_path}.pdf")
+    # reduce vertical gap between the two subplots (small positive value)
+    fig.subplots_adjust(hspace=0.1)
+    # ensure final positions are computed, then compute vertical midpoint between axes
+    fig.canvas.draw()
+    pos_top = ax_top.get_position()
+    pos_bottom = ax_bottom.get_position()
+    # midpoint between the bottom of the top axis and the top of the bottom axis
+    mid_y = (pos_top.y0 + pos_bottom.y1) / 2.0
+    # move label slightly further left to clear ticks and a bit down from the midpoint
+    x_pos = -0.008
+    y_pos = mid_y - 0.1
+    # clamp into figure bounds
+    y_pos = max(0.03, min(0.97, y_pos))
+    fig.text(x_pos, y_pos, "Time (minutes)", va="center", ha="left", rotation="vertical", fontsize=10)
+    plt.savefig(f"{out_path}.png", bbox_inches="tight")
+    plt.savefig(f"{out_path}.pdf", bbox_inches="tight")
     print(f"Saved plot to {out_path}")
 
 
