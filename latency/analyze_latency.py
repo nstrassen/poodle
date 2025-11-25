@@ -29,10 +29,13 @@ def items_per_second(latencies):
 
 
 if __name__ == '__main__':
-    base_path = "results/latency-experiments/"
+    base_path = "/Users/nils/uni/programming/poodle/results/latency-experiments"
     bert_latencies = get_latency_summary(os.path.join(base_path, "bert"), [1, 2, 4, 8, 16, 32, 64, 128])
     llm_latencies = get_latency_summary(os.path.join(base_path, "llm"), [1, 2, 4, 8, 16])
+    llm_wrapped_latencies = get_latency_summary(os.path.join(base_path, "llm-wrapped"), [1])
     print("bert latencies", bert_latencies)
     print("llm latencies", llm_latencies)
+    print("llm-wrapped latencies", llm_wrapped_latencies)
     print("bert items per second", items_per_second(bert_latencies))
     print("llm items per second", items_per_second(llm_latencies))
+    print("llm-wrapped items per second", items_per_second(llm_wrapped_latencies))
