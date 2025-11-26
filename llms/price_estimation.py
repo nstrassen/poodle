@@ -103,7 +103,7 @@ def plot_price_savings(request_range_range, large_model, small_model):
     ]
 
     plt.rcParams.update({'font.size': 22})
-    plt.figure(figsize=(4, 5))
+    plt.figure(figsize=(4, 3))
     x = [n // 1000 for n in requests]
     # increase marker size for better visibility
     plt.plot(x, savings, marker='o', color='#43a2ca', linewidth=3, markersize=8)
@@ -119,7 +119,7 @@ def plot_price_savings(request_range_range, large_model, small_model):
     plt.xlim(left=0, right=x_max + padding)
     plt.xticks(np.linspace(0, x_max, 3))
 
-    plt.ylabel("Price Savings ($)")
+    plt.ylabel("Savings ($)")
 
     # add a small buffer on the y axis so top/bottom markers aren't cut off
     y_min = min(savings) if savings else 0
