@@ -1,7 +1,7 @@
 import json
 import os
 
-from training.bert_training import LLM, GROUND_TRUTH
+from bert_accuracy.bert_training import LLM, GROUND_TRUTH
 
 
 def get_max_test_accuracy_for_model(model_name, label_method, num_splits, test_splits=None):

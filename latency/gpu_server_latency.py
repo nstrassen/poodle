@@ -7,7 +7,7 @@ import torch
 from transformers import BertForSequenceClassification, BertTokenizer
 
 from data.imdb.reduced_imdb import load_imdb_data
-from training.llama_7b import load_llama_model
+from bert_accuracy.llama_7b import load_llama_model
 
 
 def measure_llm_latency(data_path, batch_size=1, warm_up_cycles=3, measurement_cycles=10, results_path=None,

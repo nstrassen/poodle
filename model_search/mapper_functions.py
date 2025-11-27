@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from training.bert_training import load_imdb_splits, IMDbDataset
+from bert_accuracy.bert_training import load_imdb_splits, IMDbDataset
 
 
 def evaluate_sst2_on_imdb(sst_model, tokenizer, root_data_path, batch_size=8, max_length=512, num_splits=1,

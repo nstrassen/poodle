@@ -1,6 +1,6 @@
 import os
 
-from training.bert_training import BERT_BASE_UNCASED, train_and_evaluate_bert_like_model, GROUND_TRUTH, LLM
+from bert_accuracy.bert_training import BERT_BASE_UNCASED, train_and_evaluate_bert_like_model, GROUND_TRUTH, LLM
 
 if __name__ == '__main__':
     results_dir = "/mount-fs/poodle/fine-tune-model-results/imdb/"

@@ -40,7 +40,7 @@ from transformers import AutoModel
 from transformers import AutoTokenizer
 
 from model_search.nn_proxy import linear_proxy
-from training.bert_training import load_imdb_splits, IMDbDataset
+from bert_accuracy.bert_training import load_imdb_splits, IMDbDataset
 
 
 def score_models(data, model_ids, num_classes, batch_size=32, max_length=512):
