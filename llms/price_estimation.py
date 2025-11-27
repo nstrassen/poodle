@@ -121,14 +121,21 @@ def plot_price_savings(request_range_range, large_model, small_model):
 
     plt.ylabel("Savings ($)")
 
-    # add a small buffer on the y axis so top/bottom markers aren't cut off
     y_min = min(savings) if savings else 0
     y_max = max(savings) if savings else 0
     if y_min == y_max:
-        # ensure visible span for constant data
         y_max = y_min + 1.0
+
+    # Ensure 0 is always between y_min and y_max
+    if y_max < 0:
+        y_max = 0
+    if y_min > 0:
+        y_min = 0
+
     y_padding = max(0.5, (y_max - y_min) * 0.05)
     plt.ylim(bottom=y_min - y_padding, top=y_max + y_padding)
+    plt.yticks([int(y_min - y_padding), 0, int(y_max + y_padding)])
+
 
     # plt.title(f"Price Savings: {large_model} vs Optimized ({small_model})")
     plt.tight_layout()
