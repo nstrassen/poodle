@@ -66,14 +66,12 @@ def single_model_price_per_request(model_id, config, wrapped=False):
 
 
 def poodle_price(config: DemoScenario):
-    assert config.requests.expected_requests > config.requests.switch_after_n_items, "Expected requests must be greater than switch_after_n_items for the price estimation to make sense."
-
     base_model_price_per_request = \
         single_model_price_per_request(config.models.large_model, config)
     small_model_price_per_request = \
         single_model_price_per_request(config.models.small_model, config, wrapped=True)
 
-    small_model_requests = config.requests.expected_requests - config.requests.switch_after_n_items
+    small_model_requests = max(config.requests.expected_requests - config.requests.switch_after_n_items, 0)
     large_model_requests = config.requests.switch_after_n_items
     monitoring_requests = config.validation.validation_requests_percent * small_model_requests
 
