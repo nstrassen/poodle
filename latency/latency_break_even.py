@@ -2,7 +2,7 @@ def time_for_llm_requests(num_requests):
     return num_requests / 12.7
 
 def time_for_jitr(num_requests):
-    llm = 5000 / 0.7
+    llm = 5000 / 0.7 # roughly 2h which is easily enough to in parallel develop the surrogate model
     bert = (num_requests - 5000) / 255.8
     return llm + bert
 
