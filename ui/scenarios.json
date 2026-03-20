@@ -15,7 +15,7 @@
       "wrapper_prompt": "\nYou are a powerful language model. You are given a user request consisting of a system prompt and a user message. Your task is as follows:\n\n1. Identify the type of input the user is providing: one of [\"text\", \"image\", \"table\", \"other\"]\n2. Infer what task you are expected to perform, choosing from: [\"sentiment classification\", \"summarization\", \"translation\", \"question answering\", \"information extraction\", \"topic modeling\", \"other\"]\n3. Solve the task that the user is giving you and put your response in a separate field called \"user_response\" which is in JSON format\n\nRespond with a JSON object containing:\n- \"input_type\"\n- \"task_type\"\n- \"user_response\" (JSON describing user response)\n",
       "wrapped_requests_percent": 0.1,
       "output": "{\"sentiment\": \"positive\"}",
-      "wrapped_output": "```\n{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}\n```"
+      "wrapped_output": "{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}"
     },
     "dev": {
       "model_dev_costs": 4.0
