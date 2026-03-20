@@ -1,3 +1,4 @@
+from dataclasses import dataclass, asdict
 from enum import Enum
 
 
@@ -14,9 +15,6 @@ class Model(Enum):
 class TaskDetectionMethod(Enum):
     WRAPPER_PROMPT = "wrapper_prompt"
     USER_PROVIDED = "user_provided"
-
-
-from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -114,33 +112,11 @@ class DemoScenario:
         example_wrapped_output = "```\n{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}\n```"
 
         return cls(
-            models=ModelConfig(large_model=Model.LLAMA_405B_TURBO, small_model=Model.BERT_80M),
-            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=5_000),
+            models=ModelConfig(large_model=Model.GPT_4_1, small_model=Model.BERT_80M),
+            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=100_000),
             tokens=TokenConfig(input=example_review, prompt=example_prompt,
-                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=1,
+                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=0.1,
                                output=example_output, wrapped_output=example_wrapped_output),
             dev=ModelDevConfig(model_dev_costs=4),
             validation=ValidationConfig(validation_requests_percent=0)
         )
-
-
-if __name__ == '__main__':
-    example_scenario_dict = {
-        "models": {
-            "large_model": "GPT_4_1",
-            "small_model": "BERT_80M"
-        },
-        "requests": {
-            "expected_requests": 500000,
-            "switch_after_n_items": 1000
-        },
-        "tokens": {
-            "prompt": "Summarize this:",
-            "wrapper_prompt": "",
-            "wrapped_requests_percent": 0.8
-        },
-        "validation": {
-            "validation_requests_percent": 0.1
-        }
-    }
-    example_demo_scenario = DemoScenario.from_dict(example_scenario_dict)

@@ -66,25 +66,35 @@ def single_model_price_per_request(model_id, config, wrapped=False):
 
 
 def poodle_price(config: DemoScenario):
-    base_model_price_per_request = \
-        single_model_price_per_request(config.models.large_model, config)
+    large_model_price_per_request_wrapped = \
+        single_model_price_per_request(config.models.large_model, config, wrapped=True)
+    large_model_price_per_request_non_wrapped = \
+        single_model_price_per_request(config.models.large_model, config, wrapped=False)
     small_model_price_per_request = \
-        single_model_price_per_request(config.models.small_model, config, wrapped=True)
+        single_model_price_per_request(config.models.small_model, config, wrapped=False)
 
+    # first n request that go to lagre model
+    large_model_requests = min(config.requests.expected_requests, config.requests.switch_after_n_items)
+    large_model_requests_wrapped = config.tokens.wrapped_requests_percent * large_model_requests
+    large_model_requests_non_wrapped = large_model_requests - large_model_requests_wrapped
+    first_n_cost = (large_model_requests_non_wrapped * large_model_price_per_request_non_wrapped +
+                    large_model_requests_wrapped * large_model_price_per_request_wrapped)
+
+    # next requests to small model
     small_model_requests = max(config.requests.expected_requests - config.requests.switch_after_n_items, 0)
-    large_model_requests = config.requests.switch_after_n_items
-    monitoring_requests = config.validation.validation_requests_percent * small_model_requests
+    small_model_cost = small_model_requests * small_model_price_per_request
 
-    small_model_price = small_model_price_per_request * small_model_requests
-    large_model_price = base_model_price_per_request * large_model_requests
-    monitoring_price = base_model_price_per_request * monitoring_requests
+    # every now and then send request to large model to check for data drift
+    monitoring_requests = config.validation.validation_requests_percent * small_model_requests
+    monitoring_cost = monitoring_requests * large_model_price_per_request_non_wrapped
+
 
     # TODO get better numbers here, probably cost will go lower
     # for now assume GPU time of 3 hours for model search and fine-tuning, have to validate
     # cost per hour ~1.2$/h -> ~4$
     model_search_and_dev_cost = config.dev.model_dev_costs
 
-    return small_model_price + large_model_price + monitoring_price + model_search_and_dev_cost
+    return first_n_cost + small_model_cost + monitoring_cost + model_search_and_dev_cost
 
 
 def compare_single_model_and_poodle(config: DemoScenario):
