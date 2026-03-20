@@ -35,6 +35,24 @@ MODEL_PRICING_PER_1M = {  # prices in $/1M tokens
     Model.GPT_4_1_NANO: {INPUT: 0.1, OUTPUT: 0.4},
 }
 
+# Custom models added at runtime (string-keyed, injected by the UI server)
+CUSTOM_MODEL_PRICING: dict[str, dict] = {}
+
+
+def _get_pricing(model_id) -> dict:
+    """Lookup pricing for a Model enum OR a custom model string."""
+    # Direct enum key
+    if model_id in MODEL_PRICING_PER_1M:
+        return MODEL_PRICING_PER_1M[model_id]
+    # String matching an enum's .value
+    for k, v in MODEL_PRICING_PER_1M.items():
+        if hasattr(k, "value") and k.value == model_id:
+            return v
+    # Custom model registered at runtime
+    if isinstance(model_id, str) and model_id in CUSTOM_MODEL_PRICING:
+        return CUSTOM_MODEL_PRICING[model_id]
+    raise KeyError(f"No pricing found for model: {model_id!r}")
+
 
 def demo_price_estimation(config: DemoScenario):
     large_model_costs = single_model_price(config.models.large_model, config)
@@ -48,8 +66,9 @@ def single_model_price(model_id, config: DemoScenario):
 
 
 def single_model_price_per_request(model_id, config, wrapped=False):
-    inp_token_price = MODEL_PRICING_PER_1M[model_id][INPUT] / 10 ** 6
-    out_token_price = MODEL_PRICING_PER_1M[model_id][OUTPUT] / 10 ** 6
+    pricing = _get_pricing(model_id)
+    inp_token_price = pricing[INPUT] / 10 ** 6
+    out_token_price = pricing[OUTPUT] / 10 ** 6
 
     input_tokens = num_tokens(config.tokens.input) + num_tokens(config.tokens.prompt)
     if wrapped:

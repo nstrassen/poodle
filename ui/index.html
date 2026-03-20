@@ -57,6 +57,19 @@
     .btn-primary:hover { background: #8ba3f8; }
     .btn-success { background: #16a34a; color: #fff; }
     .btn-success:hover { background: #15803d; }
+    .actions-divider { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+    .scenario-select {
+      padding: 6px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 0.82rem;
+      min-width: 200px;
+      cursor: pointer;
+    }
+    .scenario-select:focus { outline: none; border-color: var(--accent); }
+    .btn-icon { padding: 6px 9px; font-size: 0.88rem; }
 
     /* ── Chart section ───────────────────────────────────────────────── */
     .chart-section {
@@ -124,6 +137,11 @@
     /* Tokens section spans all columns */
     .section.wide {
       grid-column: 1 / -1;
+    }
+
+    /* Model Prices box spans 2 columns */
+    .section.medium {
+      grid-column: span 2;
     }
 
 
@@ -206,6 +224,90 @@
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
     .hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
 
+    /* Model pricing table */
+    .model-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 14px;
+    }
+    .model-table thead tr { background: rgba(255,255,255,0.04); }
+    .model-table th {
+      padding: 7px 12px;
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .model-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    .model-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .model-table tbody tr:last-child td { border-bottom: none; }
+    .model-table .col-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: #a5b4fc;
+    }
+    .badge-provider {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-openai   { background: rgba(16,163,127,0.18); color: #34d399; }
+    .badge-together { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
+    .badge-custom   { background: rgba(251,191,36,0.18);  color: #fbbf24; }
+
+    /* Add-custom-model form */
+    .add-model-form {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 0 4px;
+    }
+    .add-model-form input {
+      padding: 6px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.82rem;
+      width: 100%;
+    }
+    .add-model-form input:focus { outline: none; border-color: var(--accent); }
+    .add-model-form input::placeholder { color: var(--text-muted); }
+    .btn-add-model {
+      padding: 6px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-add-model:hover { background: #8ba8ff; }
+    .btn-del-model {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+    }
+    .btn-del-model:hover { color: #f87171; background: rgba(248,113,113,0.1); }
 
     .toast {
       position: fixed; bottom: 20px; right: 20px;
@@ -226,10 +328,14 @@
   <div class="logo">🐩 Poodle</div>
   <div class="subtitle">Demo Configuration Builder</div>
   <div class="actions">
-    <button class="btn btn-ghost"   onclick="loadExample()">Load Example</button>
-    <button class="btn btn-ghost"   onclick="resetDefaults()">Reset</button>
+    <!-- Scenario picker -->
+    <select id="scenario-select" class="scenario-select" onchange="loadScenario()">
+      <option value="" disabled selected>— load scenario —</option>
+    </select>
+    <button class="btn btn-ghost btn-icon" title="Delete scenario" onclick="deleteScenario()">🗑</button>
 
-    <button class="btn btn-success" onclick="saveConfig()">Save Config</button>
+    <div class="actions-divider"></div>
+    <button class="btn btn-success" onclick="saveConfig()">💾 Save</button>
   </div>
 </header>
 
@@ -267,28 +373,47 @@
         <div class="field-row">
           <div class="field">
             <label>Large Model</label>
-            <select id="large_model" onchange="update()">
-              <option value="gpt-4.1">GPT-4.1</option>
-              <option value="gpt-4.1_mini">GPT-4.1 Mini</option>
-              <option value="gpt-4.1_nano">GPT-4.1 Nano</option>
-              <option value="Llama-405B-turbo">Llama 405B Turbo</option>
-              <option value="Llama-70B-turbo">Llama 70B Turbo</option>
-              <option value="Llama-8B">Llama 8B</option>
-              <option value="bert-80M">BERT 80M</option>
-            </select>
+            <select id="large_model" onchange="update()"></select>
           </div>
           <div class="field">
             <label>Small Model</label>
-            <select id="small_model" onchange="update()">
-              <option value="bert-80M">BERT 80M</option>
-              <option value="Llama-8B">Llama 8B</option>
-              <option value="Llama-70B-turbo">Llama 70B Turbo</option>
-              <option value="Llama-405B-turbo">Llama 405B Turbo</option>
-              <option value="gpt-4.1_nano">GPT-4.1 Nano</option>
-              <option value="gpt-4.1_mini">GPT-4.1 Mini</option>
-              <option value="gpt-4.1">GPT-4.1</option>
-            </select>
+            <select id="small_model" onchange="update()"></select>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model Prices -->
+    <div class="section medium">
+      <div class="section-header">
+        <div class="icon">💰</div>
+        <h2>Model Prices</h2>
+      </div>
+      <div class="section-body">
+        <div style="max-height: 220px; overflow-y: auto; border-radius: 6px; border: 1px solid var(--border);">
+          <table class="model-table" id="model-pricing-table" style="margin-top: 0;">
+            <thead style="position: sticky; top: 0; z-index: 1; background: var(--surface2);">
+              <tr>
+                <th>Model</th>
+                <th class="col-num">Input&nbsp;$/1M</th>
+                <th class="col-num">Output&nbsp;$/1M</th>
+                <th>Provider</th>
+                <th style="width:32px;"></th>
+              </tr>
+            </thead>
+            <tbody id="model-pricing-tbody">
+              <tr><td colspan="5" style="color:var(--text-muted);padding:12px;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add custom model -->
+        <div class="add-model-form">
+          <input type="text"   id="cm_name"     placeholder="Model name"     />
+          <input type="text"   id="cm_provider" placeholder="Provider"       />
+          <input type="number" id="cm_input"    placeholder="Input $/1M"  min="0" step="0.01" />
+          <input type="number" id="cm_output"   placeholder="Output $/1M" min="0" step="0.01" />
+          <button class="btn-add-model" onclick="addCustomModel()">+ Add</button>
         </div>
       </div>
     </div>
@@ -462,6 +587,20 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Save-name modal -->
+<div id="save-modal-backdrop" onclick="if(event.target===this)closeSaveModal();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; align-items:center; justify-content:center;">
+  <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:28px 28px 22px; min-width:340px; box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="font-size:1rem; font-weight:600; margin-bottom:14px; color:var(--text);">Save Scenario</div>
+    <input id="save-modal-input" type="text" placeholder="Scenario name…"
+      style="width:100%; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:7px; color:var(--text); font-size:0.9rem; box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter') confirmSave(); if(event.key==='Escape') closeSaveModal();" />
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn btn-success" onclick="confirmSave()">Save</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
@@ -732,38 +871,239 @@ function getConfig() {
 
 function update() {
   const cfg = getConfig();
-updateChart(cfg);
+  renderModelTable(cfg.models.large_model, cfg.models.small_model);
+  updateChart(cfg);
 }
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Load example / reset / copy / save
+// ═══════════════════════════════════════════════════════════════════════════
+// Model pricing table
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function loadExample() {
+let MODEL_DATA = [];   // [{value, name, provider, input, output}, …]
+
+function providerBadge(provider) {
+  const cls = provider === 'OpenAI'      ? 'badge-openai'
+            : provider === 'Together AI' ? 'badge-together'
+            :                              'badge-custom';
+  return `<span class="badge-provider ${cls}">${provider}</span>`;
+}
+
+function rebuildSelects(prevLarge, prevSmall) {
+  const largeEl = document.getElementById('large_model');
+  const smallEl = document.getElementById('small_model');
+  const savedLarge = prevLarge ?? largeEl.value;
+  const savedSmall = prevSmall ?? smallEl.value;
+  largeEl.innerHTML = '';
+  smallEl.innerHTML = '';
+  MODEL_DATA.forEach(m => {
+    largeEl.insertAdjacentHTML('beforeend', `<option value="${m.value}">${m.name}</option>`);
+    smallEl.insertAdjacentHTML('beforeend', `<option value="${m.value}">${m.name}</option>`);
+  });
+  largeEl.value = savedLarge;
+  smallEl.value = savedSmall;
+}
+
+function renderModelTable(selectedLarge, selectedSmall) {
+  const tbody = document.getElementById('model-pricing-tbody');
+  if (!MODEL_DATA.length) return;
+
+  tbody.innerHTML = MODEL_DATA.map(m => {
+    const isLarge = m.value === selectedLarge;
+    const isSmall = m.value === selectedSmall;
+    const highlight = isLarge ? 'background:rgba(248,113,113,0.10);'
+                    : isSmall ? 'background:rgba(74,222,128,0.09);'
+                    : '';
+    const tag = isLarge
+      ? ' <span style="font-size:0.68rem;color:#f87171;font-weight:600;">large</span>'
+      : isSmall
+        ? ' <span style="font-size:0.68rem;color:#4ade80;font-weight:600;">small</span>'
+        : '';
+    const delBtn = m.custom
+      ? `<button class="btn-del-model" title="Remove" onclick="removeCustomModel('${m.value}')">✕</button>`
+      : '';
+    return `<tr style="${highlight}">
+      <td>${m.name}${tag}</td>
+      <td class="col-num">$${m.input.toFixed(2)}</td>
+      <td class="col-num">$${m.output.toFixed(2)}</td>
+      <td>${providerBadge(m.provider)}</td>
+      <td style="text-align:center;">${delBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadModelData() {
   try {
-    const res = await fetch('/api/example');
+    const res = await fetch('/api/models');
     if (!res.ok) throw new Error(res.statusText);
-    const d = await res.json();
-    setFormValues({
-      large_model:                 d.models.large_model,
-      small_model:                 d.models.small_model,
-      expected_requests:           d.requests.expected_requests,
-      switch_after_n_items:        d.requests.switch_after_n_items,
-      token_input:                 d.tokens.input,
-      token_prompt:                d.tokens.prompt,
-      task_detection_method:       d.tokens.task_detection_method,
-      wrapper_prompt:              d.tokens.wrapper_prompt,
-      wrapped_requests_percent:    d.tokens.wrapped_requests_percent,
-      token_output:                d.tokens.output,
-      wrapped_output:              d.tokens.wrapped_output,
-      model_dev_costs:             d.dev.model_dev_costs,
-      validation_requests_percent: d.validation.validation_requests_percent,
-    });
-    showToast('Example scenario loaded');
+    MODEL_DATA = await res.json();
+    rebuildSelects();
+    const largeEl = document.getElementById('large_model');
+    const smallEl = document.getElementById('small_model');
+    renderModelTable(largeEl.value, smallEl.value);
+    largeEl.addEventListener('change', () =>
+      renderModelTable(largeEl.value, document.getElementById('small_model').value));
+    smallEl.addEventListener('change', () =>
+      renderModelTable(document.getElementById('large_model').value, smallEl.value));
   } catch (e) {
-    showToast('Failed to load example: ' + e.message);
+    document.getElementById('model-pricing-tbody').innerHTML =
+      `<tr><td colspan="5" style="color:#f87171;">Failed to load model data: ${e.message}</td></tr>`;
   }
+}
+
+async function addCustomModel() {
+  const name     = document.getElementById('cm_name').value.trim();
+  const provider = document.getElementById('cm_provider').value.trim() || 'Custom';
+  const input    = parseFloat(document.getElementById('cm_input').value);
+  const output   = parseFloat(document.getElementById('cm_output').value);
+  if (!name || isNaN(input) || isNaN(output)) {
+    showToast('Please fill in name, input cost and output cost');
+    return;
+  }
+  const largeEl = document.getElementById('large_model');
+  const smallEl = document.getElementById('small_model');
+  try {
+    const res = await fetch('/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, provider, input, output }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    MODEL_DATA = await res.json();
+    rebuildSelects(largeEl.value, smallEl.value);
+    renderModelTable(largeEl.value, smallEl.value);
+    // Clear form
+    ['cm_name','cm_provider','cm_input','cm_output'].forEach(id =>
+      document.getElementById(id).value = '');
+    showToast(`Model "${name}" added`);
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function removeCustomModel(value) {
+  const largeEl = document.getElementById('large_model');
+  const smallEl = document.getElementById('small_model');
+  // If the model being deleted is currently selected, fall back to first
+  const newLarge = largeEl.value === value ? null : largeEl.value;
+  const newSmall = smallEl.value === value ? null : smallEl.value;
+  try {
+    const res = await fetch('/api/models/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+    MODEL_DATA = await res.json();
+    rebuildSelects(newLarge, newSmall);
+    renderModelTable(largeEl.value, smallEl.value);
+    update();
+    showToast('Model removed');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+
+// Scenarios
+// ═══════════════════════════════════════════════════════════════════════════
+
+let SCENARIOS = [];  // [{key, config}, ...]
+
+async function loadScenarioList() {
+  try {
+    const res = await fetch('/api/scenarios');
+    if (!res.ok) return;
+    SCENARIOS = await res.json();
+    const sel = document.getElementById('scenario-select');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="" disabled>— load scenario —</option>';
+    SCENARIOS.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.key;
+      opt.textContent = s.key;
+      sel.appendChild(opt);
+    });
+    if (prev && SCENARIOS.find(s => s.key === prev)) {
+      sel.value = prev;
+    } else if (SCENARIOS.length) {
+      sel.value = SCENARIOS[0].key;
+      applyScenarioConfig(SCENARIOS[0].config);
+    }
+  } catch { /* silent */ }
+}
+
+function applyScenarioConfig(d) {
+  setFormValues({
+    large_model:                 d.models.large_model,
+    small_model:                 d.models.small_model,
+    expected_requests:           d.requests.expected_requests,
+    switch_after_n_items:        d.requests.switch_after_n_items,
+    token_input:                 d.tokens.input,
+    token_prompt:                d.tokens.prompt,
+    task_detection_method:       d.tokens.task_detection_method,
+    wrapper_prompt:              d.tokens.wrapper_prompt,
+    wrapped_requests_percent:    d.tokens.wrapped_requests_percent,
+    token_output:                d.tokens.output,
+    wrapped_output:              d.tokens.wrapped_output,
+    model_dev_costs:             d.dev.model_dev_costs,
+    validation_requests_percent: d.validation.validation_requests_percent,
+  });
+}
+
+function loadScenario() {
+  const key = document.getElementById('scenario-select').value;
+  if (!key) return;
+  const entry = SCENARIOS.find(s => s.key === key);
+  if (!entry) { showToast('Scenario not found'); return; }
+  applyScenarioConfig(entry.config);
+  showToast(`Loaded: ${key}`);
+}
+
+async function deleteScenario() {
+  const key = document.getElementById('scenario-select').value;
+  if (!key) { showToast('Select a scenario first'); return; }
+  if (!confirm(`Delete scenario "${key}"?`)) return;
+  const res = await fetch('/api/scenarios/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: key }),
+  });
+  if (res.ok) {
+    SCENARIOS = await res.json();
+    await loadScenarioList();
+    showToast(`Deleted: ${key}`);
+  }
+}
+
+// Save modal
+function saveConfig() {
+  const modal = document.getElementById('save-modal-backdrop');
+  const input = document.getElementById('save-modal-input');
+  modal.style.display = 'flex';
+  input.value = '';
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeSaveModal() {
+  document.getElementById('save-modal-backdrop').style.display = 'none';
+}
+
+async function confirmSave() {
+  const name = document.getElementById('save-modal-input').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  closeSaveModal();
+  try {
+    const res = await fetch('/api/scenarios/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, config: getConfig() }),
+    });
+    if (res.ok) {
+      SCENARIOS = await res.json();
+      await loadScenarioList();
+      document.getElementById('scenario-select').value = name;
+      showToast(`Saved: ${name}`);
+    } else {
+      showToast('Save failed: ' + res.statusText);
+    }
+  } catch { showToast('Save failed (server not reachable)'); }
 }
 
 function resetDefaults() {
@@ -815,19 +1155,6 @@ function setFormValues(v) {
 }
 
 
-async function saveConfig() {
-  try {
-    const res = await fetch('/api/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(getConfig()),
-    });
-    showToast(res.ok ? 'Config saved!' : 'Save failed: ' + res.statusText);
-  } catch {
-    showToast('Save failed (server not reachable)');
-  }
-}
-
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -836,7 +1163,8 @@ function showToast(msg) {
 }
 
 // ── Init
-update();
+loadModelData().then(() => update());
+loadScenarioList();
 </script>
 </body>
 </html>

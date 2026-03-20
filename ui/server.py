@@ -26,12 +26,87 @@ from demo.demo_config import (
     TokenConfig, ModelDevConfig, ValidationConfig,
     Model, TaskDetectionMethod,
 )
-from cost_break_even.price_estimation import single_model_price, poodle_price
+import cost_break_even.price_estimation as pe
+from cost_break_even.price_estimation import single_model_price, poodle_price, MODEL_PRICING_PER_1M, INPUT, OUTPUT
 
-SAVE_PATH = REPO_ROOT / "demo" / "saved_config.json"
+SCENARIOS_PATH     = ROOT / "scenarios.json"
+CUSTOM_MODELS_PATH = ROOT / "custom_models.json"
+
+# ── Scenario persistence ───────────────────────────────────────────────────
+
+def _load_scenarios() -> dict:
+    if SCENARIOS_PATH.exists():
+        return json.loads(SCENARIOS_PATH.read_text())
+    return {}
+
+def _save_scenarios(data: dict):
+    SCENARIOS_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+# ── Custom model persistence ───────────────────────────────────────────────
+# Each entry: { "value": str, "name": str, "provider": str, "input": float, "output": float }
+_CUSTOM_META: list[dict] = []
+
+def _load_custom_models():
+    if CUSTOM_MODELS_PATH.exists():
+        data = json.loads(CUSTOM_MODELS_PATH.read_text())
+        for m in data:
+            _CUSTOM_META.append(m)
+            pe.CUSTOM_MODEL_PRICING[m["value"]] = {INPUT: m["input"], OUTPUT: m["output"]}
+
+def _save_custom_models():
+    CUSTOM_MODELS_PATH.write_text(json.dumps(_CUSTOM_META, indent=2))
+
+_load_custom_models()
+
+
+# ── Model display metadata ─────────────────────────────────────────────────
+
+_PRETTY_NAMES = {
+    Model.BERT_80M:         "BERT 80M",
+    Model.LLAMA_8B:         "Llama 3.1 8B",
+    Model.LLAMA_70B_TURBO:  "Llama 3.3 70B Turbo",
+    Model.LLAMA_405B_TURBO: "Llama 3.1 405B Turbo",
+    Model.GPT_4_1:          "GPT-4.1",
+    Model.GPT_4_1_MINI:     "GPT-4.1 Mini",
+    Model.GPT_4_1_NANO:     "GPT-4.1 Nano",
+}
+
+_PROVIDERS = {
+    Model.BERT_80M:         "Together AI",
+    Model.LLAMA_8B:         "Together AI",
+    Model.LLAMA_70B_TURBO:  "Together AI",
+    Model.LLAMA_405B_TURBO: "Together AI",
+    Model.GPT_4_1:          "OpenAI",
+    Model.GPT_4_1_MINI:     "OpenAI",
+    Model.GPT_4_1_NANO:     "OpenAI",
+}
+
+def _build_model_table() -> list[dict]:
+    rows = []
+    for model, pricing in MODEL_PRICING_PER_1M.items():
+        rows.append({
+            "value":    model.value,
+            "name":     _PRETTY_NAMES.get(model, model.value),
+            "provider": _PROVIDERS.get(model, "—"),
+            "input":    pricing[INPUT],
+            "output":   pricing[OUTPUT],
+            "custom":   False,
+        })
+    for m in _CUSTOM_META:
+        rows.append({**m, "custom": True})
+    return rows
 
 
 # ── Config deserialization ─────────────────────────────────────────────────
+
+def _parse_model(value: str):
+    """Return a Model enum if known, or the raw string for custom models."""
+    try:
+        return Model(value)
+    except ValueError:
+        return value  # custom model — stored as plain string
+
 
 def scenario_from_dict(data: dict) -> DemoScenario:
     """Build a DemoScenario from a plain dict (as sent by the browser)."""
@@ -39,8 +114,8 @@ def scenario_from_dict(data: dict) -> DemoScenario:
     t = data.get("tokens", {})
     return DemoScenario(
         models=ModelConfig(
-            large_model=Model(m.get("large_model", "gpt-4.1")),
-            small_model=Model(m.get("small_model", "bert-80M")),
+            large_model=_parse_model(m.get("large_model", "gpt-4.1")),
+            small_model=_parse_model(m.get("small_model", "bert-80M")),
         ),
         requests=RequestConfig(**data.get("requests", {})),
         tokens=TokenConfig(
@@ -77,6 +152,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(200, "application/json",
                        json.dumps(scenario.to_dict(), indent=2,
                                   default=lambda o: o.value if hasattr(o, 'value') else str(o)).encode())
+        elif self.path == "/api/models":
+            self._send(200, "application/json",
+                       json.dumps(_build_model_table()).encode())
+        elif self.path == "/api/scenarios":
+            scenarios = _load_scenarios()
+            # Return as list of {key, config} so order is preserved
+            payload = [{"key": k, "config": v} for k, v in scenarios.items()]
+            self._send(200, "application/json", json.dumps(payload).encode())
         else:
             self._send(404, "text/plain", b"Not found")
 
@@ -89,8 +172,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if self.path == "/api/cost":
             self._handle_cost(body)
-        elif self.path == "/api/save":
-            self._handle_save(body)
+        elif self.path == "/api/scenarios/save":
+            self._handle_scenario_save(body)
+        elif self.path == "/api/scenarios/delete":
+            self._handle_scenario_delete(body)
+        elif self.path == "/api/models":
+            self._handle_add_model(body)
+        elif self.path == "/api/models/delete":
+            self._handle_delete_model(body)
         else:
             self._send(404, "application/json",
                        json.dumps({"error": "not found"}).encode())
@@ -125,12 +214,62 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(500, "application/json",
                        json.dumps({"error": str(e)}).encode())
 
-    def _handle_save(self, data: dict):
-        SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SAVE_PATH.write_text(json.dumps(data, indent=2))
-        print(f"  Config saved → {SAVE_PATH.relative_to(REPO_ROOT)}")
+    def _handle_add_model(self, data: dict):
+        try:
+            name     = str(data["name"]).strip()
+            provider = str(data.get("provider", "Custom")).strip() or "Custom"
+            inp      = float(data["input"])
+            out      = float(data["output"])
+            if not name:
+                raise ValueError("name is required")
+            # Use a slug as the value key
+            value = name.lower().replace(" ", "-")
+            # Remove existing entry with same value if present
+            _CUSTOM_META[:] = [m for m in _CUSTOM_META if m["value"] != value]
+            entry = {"value": value, "name": name, "provider": provider,
+                     "input": inp, "output": out}
+            _CUSTOM_META.append(entry)
+            pe.CUSTOM_MODEL_PRICING[value] = {INPUT: inp, OUTPUT: out}
+            _save_custom_models()
+            self._send(200, "application/json",
+                       json.dumps(_build_model_table()).encode())
+        except (KeyError, ValueError) as e:
+            self._send(400, "application/json",
+                       json.dumps({"error": str(e)}).encode())
+
+    def _handle_delete_model(self, data: dict):
+        value = data.get("value", "")
+        _CUSTOM_META[:] = [m for m in _CUSTOM_META if m["value"] != value]
+        pe.CUSTOM_MODEL_PRICING.pop(value, None)
+        _save_custom_models()
         self._send(200, "application/json",
-                   json.dumps({"ok": True, "path": str(SAVE_PATH)}).encode())
+                   json.dumps(_build_model_table()).encode())
+
+    def _handle_scenario_save(self, data: dict):
+        name   = str(data.get("name", "")).strip()
+        config = data.get("config")
+        if not name:
+            self._send(400, "application/json",
+                       json.dumps({"error": "name is required"}).encode())
+            return
+        if not isinstance(config, dict):
+            self._send(400, "application/json",
+                       json.dumps({"error": "config is required"}).encode())
+            return
+        scenarios = _load_scenarios()
+        scenarios[name] = config
+        _save_scenarios(scenarios)
+        print(f"  Scenario '{name}' saved → scenarios.json")
+        payload = [{"key": k, "config": v} for k, v in scenarios.items()]
+        self._send(200, "application/json", json.dumps(payload).encode())
+
+    def _handle_scenario_delete(self, data: dict):
+        name = str(data.get("name", "")).strip()
+        scenarios = _load_scenarios()
+        scenarios.pop(name, None)
+        _save_scenarios(scenarios)
+        payload = [{"key": k, "config": v} for k, v in scenarios.items()]
+        self._send(200, "application/json", json.dumps(payload).encode())
 
     # ── Helpers ────────────────────────────────────────────────────────
 
@@ -172,7 +311,7 @@ def main():
     url = f"http://localhost:{args.port}"
     print(f"\n  🐩  Poodle Config UI")
     print(f"  Running at  {url}")
-    print(f"  Saves to    {SAVE_PATH.relative_to(REPO_ROOT)}")
+    print(f"  Scenarios   {SCENARIOS_PATH.relative_to(ROOT)}")
     print(f"\n  Press Ctrl+C to stop.\n")
     try:
         server.serve_forever()
