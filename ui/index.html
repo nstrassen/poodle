@@ -363,104 +363,108 @@
 <div class="layout">
   <div class="form-panel">
 
-    <!-- Models -->
-    <div class="section">
-      <div class="section-header">
-        <div class="icon">🤖</div>
-        <h2>Models</h2>
+    <!-- Model Prices (left) + Models / Requests (right) row -->
+    <div style="display:grid; grid-template-columns: subgrid; row-gap:18px; grid-column: 1 / -1;">
+
+      <!-- Model Prices: left side, spans both rows -->
+      <div class="section" style="grid-column: 1 / -2; grid-row: 1 / 3;">
+        <div class="section-header">
+          <div class="icon">💰</div>
+          <h2>Model Prices</h2>
+        </div>
+        <div class="section-body">
+          <div style="max-height: 220px; overflow-y: auto; border-radius: 6px; border: 1px solid var(--border);">
+            <table class="model-table" id="model-pricing-table" style="margin-top: 0;">
+              <thead style="position: sticky; top: 0; z-index: 1; background: var(--surface2);">
+                <tr>
+                  <th>Model</th>
+                  <th class="col-num">Input&nbsp;$/1M</th>
+                  <th class="col-num">Output&nbsp;$/1M</th>
+                  <th>Provider</th>
+                  <th style="width:32px;"></th>
+                </tr>
+              </thead>
+              <tbody id="model-pricing-tbody">
+                <tr><td colspan="5" style="color:var(--text-muted);padding:12px;">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Add custom model -->
+          <div class="add-model-form">
+            <input type="text"   id="cm_name"     placeholder="Model name"    />
+            <input type="text"   id="cm_provider" placeholder="Provider"      />
+            <input type="number" id="cm_input"    placeholder="Input $/1M"  min="0" step="0.01" />
+            <input type="number" id="cm_output"   placeholder="Output $/1M" min="0" step="0.01" />
+            <button class="btn-add-model" onclick="addCustomModel()">+ Add</button>
+          </div>
+        </div>
       </div>
-      <div class="section-body">
-        <div class="field-row">
+
+      <!-- Models: right side, top row -->
+      <div class="section">
+        <div class="section-header">
+          <div class="icon">🤖</div>
+          <h2>Models</h2>
+        </div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label>Large Model</label>
+              <select id="large_model" onchange="update()"></select>
+            </div>
+            <div class="field">
+              <label>Small Model</label>
+              <select id="small_model" onchange="update()"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requests: right side, bottom row -->
+      <div class="section">
+        <div class="section-header">
+          <div class="icon">📊</div>
+          <h2>Requests</h2>
+        </div>
+        <div class="section-body">
           <div class="field">
-            <label>Large Model</label>
-            <select id="large_model" onchange="update()"></select>
+            <label>
+              Expected Requests
+              <span class="value-badge" id="expected_requests_badge">1,000,000</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="expected_requests_slider"
+                min="1000" max="10000000" step="1000" value="1000000"
+                oninput="syncSlider('expected_requests', this.value)" />
+              <input type="number" id="expected_requests" min="1" value="1000000"
+                oninput="syncNum('expected_requests', this.value)" />
+            </div>
+            <div class="hint">Total number of API requests expected in the scenario</div>
           </div>
           <div class="field">
-            <label>Small Model</label>
-            <select id="small_model" onchange="update()"></select>
+            <label>
+              Switch After N Items
+              <span class="value-badge" id="switch_after_n_items_badge">5,000</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="switch_after_n_items_slider"
+                min="100" max="1000000" step="100" value="5000"
+                oninput="syncSlider('switch_after_n_items', this.value)" />
+              <input type="number" id="switch_after_n_items" min="1" value="5000"
+                oninput="syncNum('switch_after_n_items', this.value)" />
+            </div>
+            <div class="hint">Switch from large to small model after this many items</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Model Prices -->
-    <div class="section medium">
-      <div class="section-header">
-        <div class="icon">💰</div>
-        <h2>Model Prices</h2>
-      </div>
-      <div class="section-body">
-        <div style="max-height: 220px; overflow-y: auto; border-radius: 6px; border: 1px solid var(--border);">
-          <table class="model-table" id="model-pricing-table" style="margin-top: 0;">
-            <thead style="position: sticky; top: 0; z-index: 1; background: var(--surface2);">
-              <tr>
-                <th>Model</th>
-                <th class="col-num">Input&nbsp;$/1M</th>
-                <th class="col-num">Output&nbsp;$/1M</th>
-                <th>Provider</th>
-                <th style="width:32px;"></th>
-              </tr>
-            </thead>
-            <tbody id="model-pricing-tbody">
-              <tr><td colspan="5" style="color:var(--text-muted);padding:12px;">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Add custom model -->
-        <div class="add-model-form">
-          <input type="text"   id="cm_name"     placeholder="Model name"     />
-          <input type="text"   id="cm_provider" placeholder="Provider"       />
-          <input type="number" id="cm_input"    placeholder="Input $/1M"  min="0" step="0.01" />
-          <input type="number" id="cm_output"   placeholder="Output $/1M" min="0" step="0.01" />
-          <button class="btn-add-model" onclick="addCustomModel()">+ Add</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Requests -->
-    <div class="section">
-      <div class="section-header">
-        <div class="icon">📊</div>
-        <h2>Requests</h2>
-      </div>
-      <div class="section-body">
-        <div class="field">
-          <label>
-            Expected Requests
-            <span class="value-badge" id="expected_requests_badge">1,000,000</span>
-          </label>
-          <div class="slider-row">
-            <input type="range" id="expected_requests_slider"
-              min="1000" max="10000000" step="1000" value="1000000"
-              oninput="syncSlider('expected_requests', this.value)" />
-            <input type="number" id="expected_requests" min="1" value="1000000"
-              oninput="syncNum('expected_requests', this.value)" />
-          </div>
-          <div class="hint">Total number of API requests expected in the scenario</div>
-        </div>
-        <div class="field">
-          <label>
-            Switch After N Items
-            <span class="value-badge" id="switch_after_n_items_badge">5,000</span>
-          </label>
-          <div class="slider-row">
-            <input type="range" id="switch_after_n_items_slider"
-              min="100" max="1000000" step="100" value="5000"
-              oninput="syncSlider('switch_after_n_items', this.value)" />
-            <input type="number" id="switch_after_n_items" min="1" value="5000"
-              oninput="syncNum('switch_after_n_items', this.value)" />
-          </div>
-          <div class="hint">Switch from large to small model after this many items</div>
-        </div>
-      </div>
-    </div>
+    </div><!-- end model prices row -->
 
     <!-- Use Case + Dev + Validation row -->
-    <div style="display:flex; gap:18px; align-items:stretch; grid-column: 1 / -1;">
+    <div style="display:grid; grid-template-columns: subgrid; row-gap:18px; grid-column: 1 / -1;">
 
-      <!-- Use Case -->
-      <div class="section" style="flex:1; min-width:0;">
+      <!-- Use Case: spans all columns except the last, across both rows -->
+      <div class="section" style="grid-column: 1 / -2; grid-row: 1 / 3;">
         <div class="section-header">
           <div class="icon">✏️</div>
           <h2>Use Case</h2>
@@ -487,106 +491,102 @@
         </div>
       </div>
 
-      <!-- Dev + Validation stacked -->
-      <div style="display:flex; flex-direction:column; gap:18px; width:340px; flex-shrink:0; height:100%;">
-
-        <!-- Dev -->
-        <div class="section" style="flex:1;">
-          <div class="section-header">
-            <div class="icon">🔧</div>
-            <h2>Model Development</h2>
-          </div>
-          <div class="section-body">
-            <div class="field">
-              <label>
-                Model Dev Costs ($)
-                <span class="value-badge" id="model_dev_costs_badge">$4.00</span>
-              </label>
-              <div class="slider-row">
-                <input type="range" id="model_dev_costs_slider"
-                  min="0" max="500" step="0.5" value="4.0"
-                  oninput="syncSliderFloat('model_dev_costs', this.value)" />
-                <input type="number" id="model_dev_costs" min="0" step="0.5" value="4.0"
-                  oninput="syncNumFloat('model_dev_costs', this.value)" />
-              </div>
-              <div class="hint">One-time cost to develop / fine-tune the small model</div>
+      <!-- Dev -->
+      <div class="section">
+        <div class="section-header">
+          <div class="icon">🔧</div>
+          <h2>Model Development</h2>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label>
+              Model Dev Costs ($)
+              <span class="value-badge" id="model_dev_costs_badge">$4.00</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="model_dev_costs_slider"
+                min="0" max="500" step="0.5" value="4.0"
+                oninput="syncSliderFloat('model_dev_costs', this.value)" />
+              <input type="number" id="model_dev_costs" min="0" step="0.5" value="4.0"
+                oninput="syncNumFloat('model_dev_costs', this.value)" />
             </div>
+            <div class="hint">One-time cost to develop / fine-tune the small model</div>
           </div>
         </div>
+      </div>
 
-        <!-- Validation -->
-        <div class="section" style="flex:1;">
-          <div class="section-header">
-            <div class="icon">✅</div>
-            <h2>Validation</h2>
-          </div>
-          <div class="section-body">
-            <div class="field">
-              <label>
-                Validation Requests Percent
-                <span class="value-badge" id="validation_requests_percent_badge">0%</span>
-              </label>
-              <div class="slider-row">
-                <input type="range" id="validation_requests_percent_slider"
-                  min="0" max="1" step="0.01" value="0.0"
-                  oninput="syncSliderFloat('validation_requests_percent', this.value)" />
-                <input type="number" id="validation_requests_percent"
-                  min="0" max="1" step="0.01" value="0.0"
-                  oninput="syncNumFloat('validation_requests_percent', this.value)" />
-              </div>
-              <div class="hint">Fraction of requests used for validation (0.0 – 1.0)</div>
+      <!-- Validation -->
+      <div class="section">
+        <div class="section-header">
+          <div class="icon">✅</div>
+          <h2>Validation</h2>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label>
+              Validation Requests Percent
+              <span class="value-badge" id="validation_requests_percent_badge">0%</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="validation_requests_percent_slider"
+                min="0" max="1" step="0.01" value="0.0"
+                oninput="syncSliderFloat('validation_requests_percent', this.value)" />
+              <input type="number" id="validation_requests_percent"
+                min="0" max="1" step="0.01" value="0.0"
+                oninput="syncNumFloat('validation_requests_percent', this.value)" />
             </div>
+            <div class="hint">Fraction of requests used for validation (0.0 – 1.0)</div>
           </div>
         </div>
+      </div>
 
-      </div><!-- end right column -->
     </div><!-- end row -->
 
-    <!-- Prompt Wrapping -->
+    <!-- Task Detection -->
     <div class="section wide">
       <div class="section-header">
         <div class="icon">🔀</div>
-        <h2>Prompt Wrapping</h2>
-        <div style="margin-left:auto;">
+        <h2>Task Detection</h2>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:16px;">
+          <!-- Wrapped Requests Percent inline slider -->
+          <div id="wrapped_requests_header" style="display:flex; align-items:center; gap:8px; opacity:0.35; pointer-events:none; transition:opacity 0.2s;">
+            <span style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap;">
+              Wrapped Requests
+              <span class="value-badge" id="wrapped_requests_percent_badge" style="margin-left:4px;">0%</span>
+            </span>
+            <input type="range" id="wrapped_requests_percent_slider"
+              min="0" max="1" step="0.01" value="0"
+              style="width:110px;"
+              oninput="syncSliderFloat('wrapped_requests_percent', this.value)" />
+            <input type="number" id="wrapped_requests_percent"
+              min="0" max="1" step="0.01" value="0"
+              style="width:58px; padding:4px 6px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:0.8rem;"
+              oninput="syncNumFloat('wrapped_requests_percent', this.value)" />
+          </div>
+
           <div class="radio-group" id="task_detection_method_group">
-            <div class="radio-option selected" onclick="selectRadio('task_detection_method','wrapper_prompt')">
-              <input type="radio" name="task_detection_method" value="wrapper_prompt" checked />
+            <div class="radio-option" onclick="selectRadio('task_detection_method','wrapper_prompt')">
+              <input type="radio" name="task_detection_method" value="wrapper_prompt" />
               <label>Wrapper Prompt</label>
             </div>
-            <div class="radio-option" onclick="selectRadio('task_detection_method','user_provided')">
-              <input type="radio" name="task_detection_method" value="user_provided" />
+            <div class="radio-option selected" onclick="selectRadio('task_detection_method','user_provided')">
+              <input type="radio" name="task_detection_method" value="user_provided" checked />
               <label>User Provided</label>
             </div>
           </div>
         </div>
       </div>
-      <div class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div id="task_detection_body" class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; transition: opacity 0.2s; opacity: 0.35; pointer-events: none;">
         <!-- Col 1: Wrapper Prompt (spans both rows) -->
         <div class="field" style="grid-row: 1 / 3;">
           <label>Wrapper Prompt</label>
           <textarea id="wrapper_prompt" style="flex:1; height:100%; min-height:160px;" placeholder="Wrapper prompt for task detection…" oninput="update()"></textarea>
           <div class="hint">Used when task detection method is wrapper_prompt</div>
         </div>
-        <!-- Col 2 row 1: Wrapped Output -->
+        <!-- Wrapped Output -->
         <div class="field">
           <label>Wrapped Output</label>
           <textarea id="wrapped_output" rows="4" placeholder="Expected wrapped model output…" oninput="update()"></textarea>
-        </div>
-        <!-- Col 2 row 2: Wrapped Requests Percent -->
-        <div class="field">
-          <label>
-            Wrapped Requests Percent
-            <span class="value-badge" id="wrapped_requests_percent_badge">100%</span>
-          </label>
-          <div class="slider-row">
-            <input type="range" id="wrapped_requests_percent_slider"
-              min="0" max="1" step="0.01" value="1.0"
-              oninput="syncSliderFloat('wrapped_requests_percent', this.value)" />
-            <input type="number" id="wrapped_requests_percent"
-              min="0" max="1" step="0.01" value="1.0"
-              oninput="syncNumFloat('wrapped_requests_percent', this.value)" />
-          </div>
-          <div class="hint">Fraction of requests that go through the wrapper (0.0 – 1.0)</div>
         </div>
       </div>
     </div>
@@ -843,6 +843,16 @@ function selectRadio(name, value) {
   document.querySelectorAll('#' + name + '_group .radio-option').forEach(opt => {
     opt.classList.toggle('selected', opt.querySelector('input')?.value === value);
   });
+  if (name === 'task_detection_method') {
+    const isUserProvided = value === 'user_provided';
+    const body   = document.getElementById('task_detection_body');
+    const header = document.getElementById('wrapped_requests_header');
+    body.style.opacity         = isUserProvided ? '0.35' : '1';
+    body.style.pointerEvents   = isUserProvided ? 'none'  : 'auto';
+    header.style.opacity       = isUserProvided ? '0.35'  : '1';
+    header.style.pointerEvents = isUserProvided ? 'none'  : 'auto';
+    syncSliderFloat('wrapped_requests_percent', isUserProvided ? '0' : '1');
+  }
   update();
 }
 
