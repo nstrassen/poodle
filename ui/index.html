@@ -108,40 +108,24 @@
     .layout {
       flex: 1;
       min-height: 0;
-      display: grid;
-      grid-template-columns: 1fr 360px;
+      display: flex;
+      flex-direction: column;
     }
 
     .form-panel {
       overflow-y: auto;
       padding: 20px 24px;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 18px;
+      align-content: start;
     }
 
-    .preview-panel {
-      background: var(--surface);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
+    /* Tokens section spans all columns */
+    .section.wide {
+      grid-column: 1 / -1;
     }
-    .preview-header {
-      flex-shrink: 0;
-      padding: 13px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .preview-header span {
-      font-size: 0.77rem; font-weight: 600;
-      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    pre#json-preview {
-      flex: 1; overflow-y: auto; padding: 16px;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 0.75rem; line-height: 1.6; color: var(--text); white-space: pre;
-    }
+
 
     /* ── Form sections ───────────────────────────────────────────────── */
     /* NOTE: no overflow:hidden here — that clips native <select> dropdowns in Chrome */
@@ -222,12 +206,6 @@
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
     .hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
 
-    /* JSON highlighting */
-    .key    { color: #82aaff; }
-    .string { color: #c3e88d; }
-    .number { color: #f78c6c; }
-    .bool   { color: #ff5370; }
-    .null   { color: #a6accd; }
 
     .toast {
       position: fixed; bottom: 20px; right: 20px;
@@ -250,7 +228,7 @@
   <div class="actions">
     <button class="btn btn-ghost"   onclick="loadExample()">Load Example</button>
     <button class="btn btn-ghost"   onclick="resetDefaults()">Reset</button>
-    <button class="btn btn-primary" onclick="copyJSON()">Copy JSON</button>
+
     <button class="btn btn-success" onclick="saveConfig()">Save Config</button>
   </div>
 </header>
@@ -354,12 +332,12 @@
     </div>
 
     <!-- Tokens -->
-    <div class="section">
+    <div class="section wide">
       <div class="section-header">
         <div class="icon">✏️</div>
         <h2>Tokens</h2>
       </div>
-      <div class="section-body">
+      <div class="section-body" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;">
         <div class="field">
           <label>Task Detection Method</label>
           <div class="radio-group" id="task_detection_method_group">
@@ -465,15 +443,6 @@
 
   </div>
 
-  <!-- JSON Preview -->
-  <div class="preview-panel">
-    <div class="preview-header">
-      <span>JSON Preview</span>
-      <button class="btn btn-ghost" onclick="copyJSON()"
-        style="padding:4px 10px;font-size:0.72rem;">Copy</button>
-    </div>
-    <pre id="json-preview"></pre>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -747,26 +716,9 @@ function getConfig() {
 
 function update() {
   const cfg = getConfig();
-  document.getElementById('json-preview').innerHTML = highlight(JSON.stringify(cfg, null, 2));
-  updateChart(cfg);
+updateChart(cfg);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// JSON syntax highlighting
-// ═══════════════════════════════════════════════════════════════════════════
-
-function highlight(json) {
-  return json.replace(
-    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-    match => {
-      let cls = 'number';
-      if (/^"/.test(match)) cls = /:$/.test(match) ? 'key' : 'string';
-      else if (/true|false/.test(match)) cls = 'bool';
-      else if (/null/.test(match)) cls = 'null';
-      return `<span class="${cls}">${match}</span>`;
-    }
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Load example / reset / copy / save
@@ -846,10 +798,6 @@ function setFormValues(v) {
   update();
 }
 
-async function copyJSON() {
-  await navigator.clipboard.writeText(JSON.stringify(getConfig(), null, 2));
-  showToast('Copied to clipboard!');
-}
 
 async function saveConfig() {
   try {
