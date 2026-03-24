@@ -21,7 +21,7 @@ MODEL_PRICING_PER_1M = {  # prices in $/1M tokens
     # https://api.together.ai/models/togethercomputer/m2-bert-80M-32k-retrieval
     Model.BERT_80M: {INPUT: 0.01, OUTPUT: 0.01},
     # Ref
-    Model.LLAMA_8B: {INPUT: 0.20, OUTPUT: 0.02},
+    Model.LLAMA_8B: {INPUT: 0.20, OUTPUT: 0.20},
     # https://api.together.ai/models/meta-llama/Llama-3.3-70B-Instruct-Turbo
     Model.LLAMA_70B_TURBO: {INPUT: 0.88, OUTPUT: 0.88},
     # https://api.together.ai/models/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo

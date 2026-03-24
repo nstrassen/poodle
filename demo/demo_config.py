@@ -113,9 +113,9 @@ class DemoScenario:
 
         return cls(
             models=ModelConfig(large_model=Model.GPT_4_1, small_model=Model.BERT_80M),
-            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=100_000),
+            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=5_000),
             tokens=TokenConfig(input=example_review, prompt=example_prompt,
-                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=0.1,
+                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=1,
                                output=example_output, wrapped_output=example_wrapped_output),
             dev=ModelDevConfig(model_dev_costs=4),
             validation=ValidationConfig(validation_requests_percent=0)
