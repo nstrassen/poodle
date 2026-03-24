@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 
 
@@ -17,19 +17,19 @@ class TaskDetectionMethod(Enum):
     USER_PROVIDED = "user_provided"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelConfig:
     large_model: Model = Model.GPT_4_1
     small_model: Model = Model.BERT_80M
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestConfig:
     expected_requests: int = 1_000_000
     switch_after_n_items: int = 5_000
 
 
-@dataclass
+@dataclass(frozen=True)
 class TokenConfig:
     input: str = ""
     prompt: str = ""
@@ -40,17 +40,22 @@ class TokenConfig:
     wrapped_output: str = ""
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelDevConfig:
     model_dev_costs: float = 4.0
 
 
-@dataclass
+@dataclass(frozen=True)
 class ValidationConfig:
     validation_requests_percent: float = 0.0
 
+@dataclass(frozen=True)
+class MeasuredMetrics:
+    llm_accuracy: float = 0.0
+    small_model_accuracy: float = 0.0
 
-@dataclass
+
+@dataclass(frozen=True)
 class DemoScenario:
     models: ModelConfig = ModelConfig()
     requests: RequestConfig = RequestConfig()
@@ -118,5 +123,6 @@ class DemoScenario:
                                wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=1,
                                output=example_output, wrapped_output=example_wrapped_output),
             dev=ModelDevConfig(model_dev_costs=4),
-            validation=ValidationConfig(validation_requests_percent=0)
+            validation=ValidationConfig(validation_requests_percent=0),
+
         )

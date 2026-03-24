@@ -1,3 +1,4 @@
+from dataclasses import replace
 from demo.demo_config import DemoScenario, Model
 from demo.token_count_estimation import num_tokens
 from demo.x_values import get_plot_x_ticks
@@ -122,9 +123,9 @@ def compare_single_model_and_poodle(config: DemoScenario):
     poodle_prices = {}
     poodle_savings = {}
     for request in request_values:
-        config.requests.expected_requests = request
-        base_prices[request] = single_model_price(config.models.large_model, config)
-        poodle_prices[request] = poodle_price(config)
+        cfg = replace(config, requests=replace(config.requests, expected_requests=request))
+        base_prices[request] = single_model_price(cfg.models.large_model, cfg)
+        poodle_prices[request] = poodle_price(cfg)
         poodle_savings[request] = base_prices[request] - poodle_prices[request]
 
     return base_prices, poodle_prices, poodle_savings

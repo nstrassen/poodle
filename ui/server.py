@@ -193,11 +193,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             n = 100
             max_r = scenario.requests.expected_requests
             request_values = [max(1, int(max_r * i / (n - 1))) for i in range(n)]
+            from dataclasses import replace as dc_replace
             reqs, base_list, poodle_list, savings_list = [], [], [], []
             for r in request_values:
-                scenario.requests.expected_requests = r
-                b = single_model_price(scenario.models.large_model, scenario)
-                p = poodle_price(scenario)
+                s = dc_replace(scenario, requests=dc_replace(scenario.requests, expected_requests=r))
+                b = single_model_price(s.models.large_model, s)
+                p = poodle_price(s)
                 reqs.append(r)
                 base_list.append(b)
                 poodle_list.append(p)
