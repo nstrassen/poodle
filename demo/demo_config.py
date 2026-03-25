@@ -44,6 +44,7 @@ class TokenConfig:
 @dataclass(frozen=True)
 class ModelDevConfig:
     model_dev_costs: float = 4.0
+    dev_approach: str = ""
 
 
 @dataclass(frozen=True)
@@ -118,7 +119,7 @@ class DemoScenario:
             tokens=TokenConfig(input=example_review, prompt=example_prompt,
                                wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=1,
                                output=example_output, wrapped_output=example_wrapped_output),
-            dev=ModelDevConfig(model_dev_costs=4),
+            dev=ModelDevConfig(model_dev_costs=4, dev_approach="base"),
             validation=ValidationConfig(validation_requests_percent=0),
 
         )

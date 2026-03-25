@@ -94,10 +94,7 @@
 
     .chart-stats {
       flex-shrink: 0;
-      width: 200px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      width: 420px;
       justify-content: center;
     }
     .stat-card {
@@ -344,18 +341,38 @@
 <div class="chart-section">
   <div id="cost-chart"></div>
   <div id="savings-chart"></div>
-  <div class="chart-stats">
+  <div class="chart-stats" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; align-content:center;">
     <div class="stat-card">
       <div class="stat-label">Savings at max requests</div>
       <div class="stat-value green"  id="stat-savings">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">LLM accuracy</div>
+      <div class="stat-value accent" id="stat-llm-accuracy">0.80</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Savings %</div>
       <div class="stat-value accent" id="stat-savings-pct">—</div>
     </div>
     <div class="stat-card">
+      <div class="stat-label">Poodle accuracy</div>
+      <div class="stat-value green"  id="stat-poodle-accuracy">0.80</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Items/s LLM</div>
+      <div class="stat-value accent" id="stat-ips-llm">—</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-label">Break-even point</div>
-      <div class="stat-value muted"  id="stat-breakeven">—</div>
+      <div class="stat-value muted" id="stat-breakeven">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Earliest switch</div>
+      <div class="stat-value muted" id="stat-earliest-switch">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Items/s Poodle</div>
+      <div class="stat-value green" id="stat-ips-poodle">—</div>
     </div>
   </div>
 </div>
@@ -498,6 +515,12 @@
         <div class="section-header">
           <div class="icon">🔧</div>
           <h2>Model Development</h2>
+          <select id="dev_approach" style="margin-left:10px; padding:4px 8px; font-size:0.82rem;" onchange="update()">
+            <option value="base">base</option>
+            <option value="s-naive">s-naive</option>
+            <option value="s-500">s-500</option>
+            <option value="s-5000">s-5000</option>
+          </select>
         </div>
         <div class="section-body">
           <div class="field">
@@ -881,6 +904,7 @@ function getConfig() {
     },
     dev: {
       model_dev_costs: parseFloat(document.getElementById('model_dev_costs').value) || 0,
+      dev_approach:    document.getElementById('dev_approach').value,
     },
     validation: {
       validation_requests_percent: parseFloat(document.getElementById('validation_requests_percent').value) || 0,
@@ -1096,6 +1120,7 @@ function applyScenarioConfig(d) {
     wrapped_output:              d.tokens.wrapped_output,
     use_case:                    d.tokens.use_case ?? '',
     model_dev_costs:             d.dev.model_dev_costs,
+    dev_approach:                d.dev.dev_approach ?? 'base',
     validation_requests_percent: d.validation.validation_requests_percent,
   });
   _applyingScenario = false;
@@ -1201,6 +1226,7 @@ function setFormValues(v) {
   document.getElementById('model_dev_costs').value = v.model_dev_costs;
   document.getElementById('model_dev_costs_slider').value = v.model_dev_costs;
   updateFloatBadge('model_dev_costs', v.model_dev_costs);
+  document.getElementById('dev_approach').value = v.dev_approach ?? 'base';
 
   document.getElementById('validation_requests_percent').value = v.validation_requests_percent;
   document.getElementById('validation_requests_percent_slider').value = v.validation_requests_percent;

@@ -19,7 +19,8 @@
       "use_case": "imdb"
     },
     "dev": {
-      "model_dev_costs": 4.0
+      "model_dev_costs": 4.0,
+      "dev_approach": "base"
     },
     "validation": {
       "validation_requests_percent": 0.0
@@ -45,7 +46,8 @@
       "use_case": "short-imdb"
     },
     "dev": {
-      "model_dev_costs": 4.0
+      "model_dev_costs": 4.0,
+      "dev_approach": "base"
     },
     "validation": {
       "validation_requests_percent": 0.0
