@@ -308,6 +308,42 @@
     .badge-together { background: rgba(139,92,246,0.18);  color: #c4b5fd; }
     .badge-custom   { background: rgba(251,191,36,0.18);  color: #fbbf24; }
 
+    /* Info tooltip */
+    .info-icon {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: default;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .info-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .info-icon .info-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.75rem;
+      color: var(--text);
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 100;
+      pointer-events: none;
+    }
+    .info-icon:hover .info-tooltip { display: block; }
+
     /* Add-custom-model form */
     .add-model-form {
       display: grid;
@@ -450,7 +486,8 @@
     <div style="display:grid; grid-template-columns: subgrid; grid-column: 1 / -1;">
 
       <!-- Model Prices: all columns except the last -->
-      <div class="section" style="grid-column: 1 / -2; display:flex; flex-direction:column; align-self:start;">
+      <div class="section" style="grid-column: 1 / -2; display:flex; flex-direction:column; align-self:start; position:relative;">
+        <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Pricing per 1M tokens for each available model. Custom models can be added below.</span></span>
         <div class="section-header">
           <div class="icon">💰</div>
           <h2>Model Prices</h2>
@@ -487,7 +524,8 @@
       <div style="grid-column: -2 / -1; display:flex; flex-direction:column; gap:18px;">
 
         <!-- Models -->
-        <div class="section">
+        <div class="section" style="position:relative;">
+          <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Large model is the baseline; small model is the fine-tuned replacement used after the switch.</span></span>
           <div class="section-header">
             <div class="icon">🤖</div>
             <h2>Models</h2>
@@ -507,7 +545,8 @@
         </div>
 
         <!-- Requests -->
-        <div class="section">
+        <div class="section" style="position:relative;">
+          <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Total expected requests and the point at which traffic switches from large to small model.</span></span>
           <div class="section-header">
             <div class="icon">📊</div>
             <h2>Requests</h2>
@@ -547,10 +586,11 @@
     </div><!-- end model prices row -->
 
     <!-- Use Case + Dev + Validation row -->
-    <div style="display:grid; grid-template-columns: subgrid; row-gap:18px; grid-column: 1 / -1;">
+    <div style="display:grid; grid-template-columns: subgrid; grid-column: 1 / -1;">
 
-      <!-- Use Case: spans all columns except the last, across both rows -->
-      <div class="section" style="grid-column: 1 / -2; grid-row: 1 / 3;">
+      <!-- Use Case: all columns except the last, height driven by right column -->
+      <div class="section" style="grid-column: 1 / -2; min-height:0; display:flex; flex-direction:column; position:relative;">
+        <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Sample texts used for token counting. Select a preset use case or enter custom examples.</span></span>
         <div class="section-header">
           <div class="icon">✏️</div>
           <h2>Use Case</h2>
@@ -559,84 +599,90 @@
           </select>
         </div>
         <!-- 2-column grid: Input | Prompt / Output -->
-        <div class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; flex:1; min-height:0;">
           <!-- Col 1: Input (spans both rows) -->
-          <div class="field" style="grid-row: 1 / 3;">
+          <div class="field" style="grid-row: 1 / 3; min-height:0; display:flex; flex-direction:column;">
             <label>Input</label>
-            <textarea id="token_input" style="flex:1; height:100%; min-height:160px;" placeholder="Example input text sent to the model…" oninput="document.getElementById('use_case_select').value=''; update()"></textarea>
+            <textarea id="token_input" style="flex:1; min-height:0; resize:none;" placeholder="Example input text sent to the model…" oninput="document.getElementById('use_case_select').value=''; update()"></textarea>
           </div>
           <!-- Col 2 row 1: Prompt -->
-          <div class="field">
+          <div class="field" style="min-height:0; display:flex; flex-direction:column;">
             <label>Prompt</label>
-            <textarea id="token_prompt" rows="4" placeholder="System prompt / task instructions…" oninput="update()"></textarea>
+            <textarea id="token_prompt" style="flex:1; min-height:0; resize:none;" placeholder="System prompt / task instructions…" oninput="update()"></textarea>
           </div>
           <!-- Col 2 row 2: Output -->
-          <div class="field">
+          <div class="field" style="min-height:0; display:flex; flex-direction:column;">
             <label>Output</label>
-            <textarea id="token_output" rows="4" placeholder="Expected model output…" oninput="update()"></textarea>
+            <textarea id="token_output" style="flex:1; min-height:0; resize:none;" placeholder="Expected model output…" oninput="update()"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- Dev -->
-      <div class="section">
-        <div class="section-header">
-          <div class="icon">🔧</div>
-          <h2>Model Development</h2>
-          <select id="dev_approach" style="margin-left:auto; padding:3px 7px; font-size:0.78rem; width:82px;" onchange="updateDevCost(); update()">
-            <option value="base">base</option>
-            <option value="s-naive">s-naive</option>
-            <option value="s-500">s-500</option>
-            <option value="s-5000">s-5000</option>
-          </select>
-        </div>
-        <div class="section-body">
-          <div class="field">
-            <label>
-              Model Dev Costs ($)
-              <span class="value-badge" id="model_dev_costs_badge">$4.00</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="model_dev_costs_slider"
-                min="0" max="500" step="0.5" value="4.0"
-                oninput="syncSliderFloat('model_dev_costs', this.value)" />
-              <input type="number" id="model_dev_costs" min="0" step="0.5" value="4.0"
-                oninput="syncNumFloat('model_dev_costs', this.value)" />
-            </div>
-            <div class="hint">One-time cost to develop / fine-tune the small model</div>
-          </div>
-        </div>
-      </div>
+      <!-- Right column: Dev + Validation in a flex column (same pattern as Models/Requests) -->
+      <div style="grid-column: -2 / -1; display:flex; flex-direction:column; gap:18px;">
 
-      <!-- Validation -->
-      <div class="section">
-        <div class="section-header">
-          <div class="icon">✅</div>
-          <h2>Validation</h2>
-        </div>
-        <div class="section-body">
-          <div class="field">
-            <label>
-              Validation Requests Percent
-              <span class="value-badge" id="validation_requests_percent_badge">0%</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="validation_requests_percent_slider"
-                min="0" max="1" step="0.01" value="0.0"
-                oninput="syncSliderFloat('validation_requests_percent', this.value)" />
-              <input type="number" id="validation_requests_percent"
-                min="0" max="1" step="0.01" value="0.0"
-                oninput="syncNumFloat('validation_requests_percent', this.value)" />
+        <!-- Dev -->
+        <div class="section" style="position:relative;">
+          <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">One-time cost to develop / fine-tune the small model</span></span>
+          <div class="section-header">
+            <div class="icon">🔧</div>
+            <h2>Model Development</h2>
+            <select id="dev_approach" style="margin-left:8px; padding:3px 7px; font-size:0.78rem; width:82px;" onchange="updateDevCost(); update()">
+              <option value="base">base</option>
+              <option value="s-naive">s-naive</option>
+              <option value="s-500">s-500</option>
+              <option value="s-5000">s-5000</option>
+            </select>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>
+                Model Dev Costs ($)
+                <span class="value-badge" id="model_dev_costs_badge">$4.00</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="model_dev_costs_slider"
+                  min="0" max="500" step="0.5" value="4.0"
+                  oninput="syncSliderFloat('model_dev_costs', this.value)" />
+                <input type="number" id="model_dev_costs" min="0" step="0.5" value="4.0"
+                  oninput="syncNumFloat('model_dev_costs', this.value)" />
+              </div>
             </div>
-            <div class="hint">Fraction of requests used for validation (0.0 – 1.0)</div>
           </div>
         </div>
-      </div>
+
+        <!-- Validation -->
+        <div class="section" style="position:relative;">
+          <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Fraction of requests used for validation (0.0 – 1.0)</span></span>
+          <div class="section-header">
+            <div class="icon">✅</div>
+            <h2>Validation</h2>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>
+                Validation Requests Percent
+                <span class="value-badge" id="validation_requests_percent_badge">0%</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="validation_requests_percent_slider"
+                  min="0" max="1" step="0.01" value="0.0"
+                  oninput="syncSliderFloat('validation_requests_percent', this.value)" />
+                <input type="number" id="validation_requests_percent"
+                  min="0" max="1" step="0.01" value="0.0"
+                  oninput="syncNumFloat('validation_requests_percent', this.value)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end right flex column -->
 
     </div><!-- end row -->
 
     <!-- Task Detection -->
-    <div class="section wide">
+    <div class="section wide" style="position:relative;">
+      <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Configures how Poodle detects the task type. Wrapper Prompt adds an extra LLM call; User Provided skips it entirely.</span></span>
       <div class="section-header">
         <div class="icon">🔀</div>
         <h2>Task Detection</h2>
