@@ -337,9 +337,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description="Poodle config UI server")
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--host", type=str, default="localhost",
+                        help="Bind address (use 0.0.0.0 inside Docker)")
     args = parser.parse_args()
 
-    server = http.server.HTTPServer(("localhost", args.port), Handler)
+    server = http.server.HTTPServer((args.host, args.port), Handler)
     url = f"http://localhost:{args.port}"
     print(f"\n  🐩  Poodle Config UI")
     print(f"  Running at  {url}")
