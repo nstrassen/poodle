@@ -49,11 +49,6 @@ class ModelDevConfig:
 class ValidationConfig:
     validation_requests_percent: float = 0.0
 
-@dataclass(frozen=True)
-class MeasuredMetrics:
-    llm_accuracy: float = 0.0
-    small_model_accuracy: float = 0.0
-
 
 @dataclass(frozen=True)
 class DemoScenario:
