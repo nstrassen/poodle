@@ -432,7 +432,7 @@
             </div>
             <div class="field">
               <label>Small Model</label>
-              <select id="small_model" onchange="update()"></select>
+              <select id="small_model" onchange="updateDevCost(); update()"></select>
             </div>
           </div>
         </div>
@@ -515,7 +515,7 @@
         <div class="section-header">
           <div class="icon">🔧</div>
           <h2>Model Development</h2>
-          <select id="dev_approach" style="margin-left:10px; padding:4px 8px; font-size:0.82rem;" onchange="update()">
+          <select id="dev_approach" style="margin-left:10px; padding:4px 8px; font-size:0.82rem;" onchange="updateDevCost(); update()">
             <option value="base">base</option>
             <option value="s-naive">s-naive</option>
             <option value="s-500">s-500</option>
@@ -761,6 +761,30 @@ function updateAccuracy() {
     (devTimeSec !== null && devTimeSec !== undefined && devTimeSec >= 0)
       ? (devTimeSec / 60).toFixed(1) + ' min'
       : '???';
+
+}
+
+function updateDevCost() {
+  const smallModel  = document.getElementById('small_model')?.value  ?? '';
+  const useCase     = document.getElementById('use_case_select')?.value ?? '';
+  const devApproach = document.getElementById('dev_approach')?.value ?? '';
+
+  const poodleRow = MEASURED_RESULTS.find(r =>
+    r.model        === smallModel  &&
+    r.use_case     === useCase     &&
+    r.dev_approach === devApproach
+  );
+
+  const devTimeSec = poodleRow?.dev_time;
+  if (devTimeSec !== null && devTimeSec !== undefined && devTimeSec >= 0) {
+    const devCost  = parseFloat(((devTimeSec / 3600) * 1.2).toFixed(4));
+    const numEl    = document.getElementById('model_dev_costs');
+    const sliderEl = document.getElementById('model_dev_costs_slider');
+    const badgeEl  = document.getElementById('model_dev_costs_badge');
+    if (numEl)    numEl.value    = devCost;
+    if (sliderEl) sliderEl.value = devCost;
+    if (badgeEl)  badgeEl.textContent = '$' + devCost.toFixed(2);
+  }
 }
 
 async function updateChart(cfg) {
@@ -1265,10 +1289,16 @@ function setFormValues(v) {
   document.getElementById('wrapped_output').value = v.wrapped_output;
   document.getElementById('use_case_select').value = v.use_case ?? '';
 
-  document.getElementById('model_dev_costs').value = v.model_dev_costs;
-  document.getElementById('model_dev_costs_slider').value = v.model_dev_costs;
-  updateFloatBadge('model_dev_costs', v.model_dev_costs);
   document.getElementById('dev_approach').value = v.dev_approach ?? 'base';
+
+  if (v.model_dev_costs === -1) {
+    // sentinel: derive cost from CSV (dev_time × $1.2/h)
+    updateDevCost();
+  } else {
+    document.getElementById('model_dev_costs').value = v.model_dev_costs;
+    document.getElementById('model_dev_costs_slider').value = v.model_dev_costs;
+    updateFloatBadge('model_dev_costs', v.model_dev_costs);
+  }
 
   document.getElementById('validation_requests_percent').value = v.validation_requests_percent;
   document.getElementById('validation_requests_percent_slider').value = v.validation_requests_percent;

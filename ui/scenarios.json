@@ -19,7 +19,7 @@
       "use_case": "imdb"
     },
     "dev": {
-      "model_dev_costs": 4.0,
+      "model_dev_costs": -1,
       "dev_approach": "base"
     },
     "validation": {
