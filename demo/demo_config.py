@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 
 
@@ -17,19 +17,19 @@ class TaskDetectionMethod(Enum):
     USER_PROVIDED = "user_provided"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelConfig:
     large_model: Model = Model.GPT_4_1
     small_model: Model = Model.BERT_80M
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestConfig:
     expected_requests: int = 1_000_000
     switch_after_n_items: int = 5_000
 
 
-@dataclass
+@dataclass(frozen=True)
 class TokenConfig:
     input: str = ""
     prompt: str = ""
@@ -38,19 +38,21 @@ class TokenConfig:
     wrapped_requests_percent: float = 1.0
     output: str = ""
     wrapped_output: str = ""
+    use_case: str = ""
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelDevConfig:
     model_dev_costs: float = 4.0
+    dev_approach: str = ""
 
 
-@dataclass
+@dataclass(frozen=True)
 class ValidationConfig:
     validation_requests_percent: float = 0.0
 
 
-@dataclass
+@dataclass(frozen=True)
 class DemoScenario:
     models: ModelConfig = ModelConfig()
     requests: RequestConfig = RequestConfig()
@@ -113,10 +115,11 @@ class DemoScenario:
 
         return cls(
             models=ModelConfig(large_model=Model.GPT_4_1, small_model=Model.BERT_80M),
-            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=100_000),
+            requests=RequestConfig(expected_requests=1_000_000, switch_after_n_items=5_000),
             tokens=TokenConfig(input=example_review, prompt=example_prompt,
-                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=0.1,
+                               wrapper_prompt=example_wrapper_prompt, wrapped_requests_percent=1,
                                output=example_output, wrapped_output=example_wrapped_output),
-            dev=ModelDevConfig(model_dev_costs=4),
-            validation=ValidationConfig(validation_requests_percent=0)
+            dev=ModelDevConfig(model_dev_costs=4, dev_approach="base"),
+            validation=ValidationConfig(validation_requests_percent=0),
+
         )

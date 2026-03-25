@@ -1,3 +1,4 @@
+from dataclasses import replace
 from demo.demo_config import DemoScenario, Model
 from demo.token_count_estimation import num_tokens
 from demo.x_values import get_plot_x_ticks
@@ -21,7 +22,7 @@ MODEL_PRICING_PER_1M = {  # prices in $/1M tokens
     # https://api.together.ai/models/togethercomputer/m2-bert-80M-32k-retrieval
     Model.BERT_80M: {INPUT: 0.01, OUTPUT: 0.01},
     # Ref
-    Model.LLAMA_8B: {INPUT: 0.20, OUTPUT: 0.02},
+    Model.LLAMA_8B: {INPUT: 0.20, OUTPUT: 0.20},
     # https://api.together.ai/models/meta-llama/Llama-3.3-70B-Instruct-Turbo
     Model.LLAMA_70B_TURBO: {INPUT: 0.88, OUTPUT: 0.88},
     # https://api.together.ai/models/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo
@@ -34,6 +35,24 @@ MODEL_PRICING_PER_1M = {  # prices in $/1M tokens
     # - gpt 4.1-nano: 0.10\$ (input), 0.40\$ (output), batch prices half
     Model.GPT_4_1_NANO: {INPUT: 0.1, OUTPUT: 0.4},
 }
+
+# Custom models added at runtime (string-keyed, injected by the UI server)
+CUSTOM_MODEL_PRICING: dict[str, dict] = {}
+
+
+def _get_pricing(model_id) -> dict:
+    """Lookup pricing for a Model enum OR a custom model string."""
+    # Direct enum key
+    if model_id in MODEL_PRICING_PER_1M:
+        return MODEL_PRICING_PER_1M[model_id]
+    # String matching an enum's .value
+    for k, v in MODEL_PRICING_PER_1M.items():
+        if hasattr(k, "value") and k.value == model_id:
+            return v
+    # Custom model registered at runtime
+    if isinstance(model_id, str) and model_id in CUSTOM_MODEL_PRICING:
+        return CUSTOM_MODEL_PRICING[model_id]
+    raise KeyError(f"No pricing found for model: {model_id!r}")
 
 
 def demo_price_estimation(config: DemoScenario):
@@ -48,8 +67,9 @@ def single_model_price(model_id, config: DemoScenario):
 
 
 def single_model_price_per_request(model_id, config, wrapped=False):
-    inp_token_price = MODEL_PRICING_PER_1M[model_id][INPUT] / 10 ** 6
-    out_token_price = MODEL_PRICING_PER_1M[model_id][OUTPUT] / 10 ** 6
+    pricing = _get_pricing(model_id)
+    inp_token_price = pricing[INPUT] / 10 ** 6
+    out_token_price = pricing[OUTPUT] / 10 ** 6
 
     input_tokens = num_tokens(config.tokens.input) + num_tokens(config.tokens.prompt)
     if wrapped:
@@ -103,9 +123,9 @@ def compare_single_model_and_poodle(config: DemoScenario):
     poodle_prices = {}
     poodle_savings = {}
     for request in request_values:
-        config.requests.expected_requests = request
-        base_prices[request] = single_model_price(config.models.large_model, config)
-        poodle_prices[request] = poodle_price(config)
+        cfg = replace(config, requests=replace(config.requests, expected_requests=request))
+        base_prices[request] = single_model_price(cfg.models.large_model, cfg)
+        poodle_prices[request] = poodle_price(cfg)
         poodle_savings[request] = base_prices[request] - poodle_prices[request]
 
     return base_prices, poodle_prices, poodle_savings

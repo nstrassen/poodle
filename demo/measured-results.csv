@@ -1,0 +1,6 @@
+model,use_case,dev_approach,switch_req,dev_time,accuracy,items-per-second,throughput-1m
+Llama-8B,imdb,provider,-1,-1,0.93,13,None
+bert-80M,imdb,base,5000,665,0.89,254,None
+bert-80M,imdb,s-naive,5000,3185,0.92,254,None
+bert-80M,imdb,s-500,5000,168,0.91,254,None
+bert-80M,imdb,s-5000,5000,725,0.92,254,None
