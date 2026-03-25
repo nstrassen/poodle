@@ -114,6 +114,47 @@
     .stat-card .stat-value.accent { color: var(--accent); }
     .stat-card .stat-value.muted  { color: var(--text-muted); font-size: 0.85rem; }
 
+    /* Comparison table inside stat panel */
+    .cmp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .cmp-table th {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      padding: 3px 6px 5px;
+      text-align: center;
+    }
+    .cmp-table th.row-hdr { text-align: left; }
+    .cmp-table td {
+      padding: 4px 6px;
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      border-top: 1px solid var(--border);
+    }
+    .cmp-table td.row-hdr {
+      text-align: left;
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+    .cmp-table .col-llm   { color: var(--accent); }
+    .cmp-table .col-poodle { color: var(--green); }
+    .stat-section-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin: 10px 0 4px;
+      opacity: 0.7;
+    }
+
     /* ── Main layout ─────────────────────────────────────────────────── */
     .layout {
       flex: 1;
@@ -341,39 +382,60 @@
 <div class="chart-section">
   <div id="cost-chart"></div>
   <div id="savings-chart"></div>
-  <div class="chart-stats" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; align-content:center;">
-    <div class="stat-card">
-      <div class="stat-label">Savings at max requests</div>
-      <div class="stat-value green"  id="stat-savings">—</div>
+  <div class="chart-stats" style="display:flex; flex-direction:column; gap:8px; justify-content:center;">
+
+    <!-- 1 · Value proposition -->
+    <div class="stat-section-label">Value</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="stat-card">
+        <div class="stat-label">Savings at max requests</div>
+        <div class="stat-value green" id="stat-savings">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Savings %</div>
+        <div class="stat-value green" id="stat-savings-pct">—</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">LLM accuracy</div>
-      <div class="stat-value accent" id="stat-llm-accuracy">0.80</div>
+
+    <!-- 2 · Quality trade-off -->
+    <div class="stat-section-label">Trade-off</div>
+    <div class="stat-card" style="padding:8px 10px;">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th class="row-hdr"></th>
+            <th class="col-llm">LLM</th>
+            <th class="col-poodle">Poodle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-hdr">Accuracy</td>
+            <td class="col-llm"   id="stat-llm-accuracy">—</td>
+            <td class="col-poodle" id="stat-poodle-accuracy">—</td>
+          </tr>
+          <tr>
+            <td class="row-hdr">Items / s</td>
+            <td class="col-llm"   id="stat-ips-llm">—</td>
+            <td class="col-poodle" id="stat-ips-poodle">—</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Savings %</div>
-      <div class="stat-value accent" id="stat-savings-pct">—</div>
+
+    <!-- 3 · Timeline -->
+    <div class="stat-section-label">Timeline</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="stat-card">
+        <div class="stat-label">Break-even</div>
+        <div class="stat-value muted" id="stat-breakeven">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Earliest switch</div>
+        <div class="stat-value muted" id="stat-earliest-switch">—</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Poodle accuracy</div>
-      <div class="stat-value green"  id="stat-poodle-accuracy">0.80</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Items/s LLM</div>
-      <div class="stat-value accent" id="stat-ips-llm">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Break-even point</div>
-      <div class="stat-value muted" id="stat-breakeven">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Earliest switch</div>
-      <div class="stat-value muted" id="stat-earliest-switch">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Items/s Poodle</div>
-      <div class="stat-value green" id="stat-ips-poodle">—</div>
-    </div>
+
   </div>
 </div>
 
