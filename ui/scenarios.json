@@ -15,7 +15,8 @@
       "wrapper_prompt": "\nYou are a powerful language model. You are given a user request consisting of a system prompt and a user message. Your task is as follows:\n\n1. Identify the type of input the user is providing: one of [\"text\", \"image\", \"table\", \"other\"]\n2. Infer what task you are expected to perform, choosing from: [\"sentiment classification\", \"summarization\", \"translation\", \"question answering\", \"information extraction\", \"topic modeling\", \"other\"]\n3. Solve the task that the user is giving you and put your response in a separate field called \"user_response\" which is in JSON format\n\nRespond with a JSON object containing:\n- \"input_type\"\n- \"task_type\"\n- \"user_response\" (JSON describing user response)\n",
       "wrapped_requests_percent": 1,
       "output": "{\"sentiment\": \"positive\"}",
-      "wrapped_output": "{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}"
+      "wrapped_output": "{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}",
+      "use_case": "imdb"
     },
     "dev": {
       "model_dev_costs": 4.0
@@ -24,57 +25,7 @@
       "validation_requests_percent": 0.0
     }
   },
-  "Translation Pipeline": {
-    "models": {
-      "large_model": "Llama-405B-turbo",
-      "small_model": "Llama-8B"
-    },
-    "requests": {
-      "expected_requests": 5000000,
-      "switch_after_n_items": 200000
-    },
-    "tokens": {
-      "input": "Please translate the following English text to German: The quick brown fox jumps over the lazy dog.",
-      "prompt": "You are a professional translator. Translate the given text accurately and naturally. Return only the translated text, no explanations.",
-      "task_detection_method": "wrapper_prompt",
-      "wrapper_prompt": "You are a language model. Identify the task type and source/target language, then perform the translation. Return JSON with fields: {\"task_type\": \"...\", \"source_lang\": \"...\", \"target_lang\": \"...\", \"translation\": \"...\"}",
-      "wrapped_requests_percent": 0.15,
-      "output": "Der schnelle braune Fuchs springt über den faulen Hund.",
-      "wrapped_output": "{\"task_type\": \"translation\", \"source_lang\": \"en\", \"target_lang\": \"de\", \"translation\": \"Der schnelle braune Fuchs springt über den faulen Hund.\"}"
-    },
-    "dev": {
-      "model_dev_costs": 12.0
-    },
-    "validation": {
-      "validation_requests_percent": 0.02
-    }
-  },
-  "test-nils": {
-    "models": {
-      "large_model": "gpt-4.1",
-      "small_model": "bert-80M"
-    },
-    "requests": {
-      "expected_requests": 2728000,
-      "switch_after_n_items": 100000
-    },
-    "tokens": {
-      "input": "\"A Mouse in the House\" is a very classic cartoon by Tom & Jerry, faithful to their tradition but with jokes of its own. It is hysterical, hilarious, very entertaining and quite amusing. Artwork is of good quality either.<br /><br />This short isn't just about Tom trying to catch Jerry. Butch lives in the same house and he's trying to catch the mouse too, because there's only going to be one cat in this house in the morning -- and that's the cat that catches the mouse.<br /><br />If you ask me, there are lots of funny gags in this cartoon.",
-      "prompt": "You are a sentiment analysis assistant. Your job is to read movie reviews and classify their sentiment as either 'positive' or 'negative'. Only respond in this exact JSON format: {\"sentiment\": \"positive\"} or {\"sentiment\": \"negative\"}. Do not provide any explanation or additional text.",
-      "task_detection_method": "wrapper_prompt",
-      "wrapper_prompt": "\nYou are a powerful language model. You are given a user request consisting of a system prompt and a user message. Your task is as follows:\n\n1. Identify the type of input the user is providing: one of [\"text\", \"image\", \"table\", \"other\"]\n2. Infer what task you are expected to perform, choosing from: [\"sentiment classification\", \"summarization\", \"translation\", \"question answering\", \"information extraction\", \"topic modeling\", \"other\"]\n3. Solve the task that the user is giving you and put your response in a separate field called \"user_response\" which is in JSON format\n\nRespond with a JSON object containing:\n- \"input_type\"\n- \"task_type\"\n- \"user_response\" (JSON describing user response)\n",
-      "wrapped_requests_percent": 0.1,
-      "output": "{\"sentiment\": \"positive\"}",
-      "wrapped_output": "```\n{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}\n```"
-    },
-    "dev": {
-      "model_dev_costs": 4
-    },
-    "validation": {
-      "validation_requests_percent": 0
-    }
-  },
-  "test2": {
+  "2 Sentiment Analysis (Example)": {
     "models": {
       "large_model": "gpt-4.1",
       "small_model": "bert-80M"
@@ -85,18 +36,19 @@
     },
     "tokens": {
       "input": "\"A Mouse in the House\" ",
-      "prompt": "You are a sentiment analysis assistant.",
-      "task_detection_method": "user_provided",
+      "prompt": "You are a sentiment analysis assistant. Your job is to read movie reviews and classify their sentiment as either 'positive' or 'negative'. Only respond in this exact JSON format: {\"sentiment\": \"positive\"} or {\"sentiment\": \"negative\"}. Do not provide any explanation or additional text.",
+      "task_detection_method": "wrapper_prompt",
       "wrapper_prompt": "\nYou are a powerful language model. You are given a user request consisting of a system prompt and a user message. Your task is as follows:\n\n1. Identify the type of input the user is providing: one of [\"text\", \"image\", \"table\", \"other\"]\n2. Infer what task you are expected to perform, choosing from: [\"sentiment classification\", \"summarization\", \"translation\", \"question answering\", \"information extraction\", \"topic modeling\", \"other\"]\n3. Solve the task that the user is giving you and put your response in a separate field called \"user_response\" which is in JSON format\n\nRespond with a JSON object containing:\n- \"input_type\"\n- \"task_type\"\n- \"user_response\" (JSON describing user response)\n",
-      "wrapped_requests_percent": 0,
-      "output": "{\"sentiment\": \"positive\"}\n",
-      "wrapped_output": "{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}"
+      "wrapped_requests_percent": 1,
+      "output": "{\"sentiment\": \"positive\"}",
+      "wrapped_output": "{\n  \"input_type\": \"text\",\n  \"task_type\": \"sentiment classification\",\n  \"user_response\": {\n    \"sentiment\": \"positive\"\n  }\n}",
+      "use_case": "short-imdb"
     },
     "dev": {
-      "model_dev_costs": 4
+      "model_dev_costs": 4.0
     },
     "validation": {
-      "validation_requests_percent": 0
+      "validation_requests_percent": 0.0
     }
   }
 }

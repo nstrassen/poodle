@@ -38,6 +38,7 @@ class TokenConfig:
     wrapped_requests_percent: float = 1.0
     output: str = ""
     wrapped_output: str = ""
+    use_case: str = ""
 
 
 @dataclass(frozen=True)

@@ -157,8 +157,9 @@
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
       border-radius: var(--radius) var(--radius) 0 0;
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
     }
+    .section-header h2 { white-space: nowrap; }
     .section-header .icon {
       width: 24px; height: 24px; border-radius: 5px;
       background: var(--accent-dim);
@@ -198,7 +199,7 @@
 
     input[type="range"] {
       -webkit-appearance: none; width: 100%; height: 5px;
-      border-radius: 3px; background: var(--surface2); outline: none; cursor: pointer;
+      border-radius: 3px; background: var(--border); outline: none; cursor: pointer;
     }
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none; width: 14px; height: 14px;
@@ -213,13 +214,13 @@
     .radio-group { display: flex; gap: 8px; }
     .radio-option {
       flex: 1; display: flex; align-items: center; gap: 7px;
-      background: var(--surface2); border: 1px solid var(--border);
+      background: var(--surface); border: 1px solid var(--border);
       border-radius: 6px; padding: 8px 11px; cursor: pointer; transition: all 0.15s;
     }
     .radio-option:hover { border-color: var(--accent-dim); }
     .radio-option input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
     .radio-option.selected { border-color: var(--accent); background: rgba(108,142,245,0.08); }
-    .radio-option label { cursor: pointer; font-size: 0.82rem; color: var(--text); margin: 0; }
+    .radio-option label { cursor: pointer; font-size: 0.82rem; color: var(--text); margin: 0; white-space: nowrap; }
 
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
     .hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
@@ -330,7 +331,7 @@
   <div class="actions">
     <!-- Scenario picker -->
     <select id="scenario-select" class="scenario-select" onchange="loadScenario()">
-      <option value="" disabled selected>— load scenario —</option>
+      <option value="">— Custom —</option>
     </select>
     <button class="btn btn-ghost btn-icon" title="Delete scenario" onclick="deleteScenario()">🗑</button>
 
@@ -468,13 +469,16 @@
         <div class="section-header">
           <div class="icon">✏️</div>
           <h2>Use Case</h2>
+          <select id="use_case_select" onchange="onUseCaseSelect()" style="margin-left:10px; padding:4px 8px; font-size:0.82rem; width:20ch; flex-shrink:0;">
+            <option value="">Custom</option>
+          </select>
         </div>
         <!-- 2-column grid: Input | Prompt / Output -->
         <div class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <!-- Col 1: Input (spans both rows) -->
           <div class="field" style="grid-row: 1 / 3;">
             <label>Input</label>
-            <textarea id="token_input" style="flex:1; height:100%; min-height:160px;" placeholder="Example input text sent to the model…" oninput="update()"></textarea>
+            <textarea id="token_input" style="flex:1; height:100%; min-height:160px;" placeholder="Example input text sent to the model…" oninput="document.getElementById('use_case_select').value=''; update()"></textarea>
           </div>
           <!-- Col 2 row 1: Prompt -->
           <div class="field">
@@ -545,33 +549,30 @@
       <div class="section-header">
         <div class="icon">🔀</div>
         <h2>Task Detection</h2>
-        <div style="margin-left:auto; display:flex; align-items:center; gap:16px;">
-          <!-- Wrapped Requests Percent inline slider -->
-          <div id="wrapped_requests_header" style="display:flex; align-items:center; gap:8px; opacity:0.35; pointer-events:none; transition:opacity 0.2s;">
-            <span style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap;">
-              Wrapped Requests
-              <span class="value-badge" id="wrapped_requests_percent_badge" style="margin-left:4px;">0%</span>
-            </span>
-            <input type="range" id="wrapped_requests_percent_slider"
-              min="0" max="1" step="0.01" value="0"
-              style="width:110px;"
-              oninput="syncSliderFloat('wrapped_requests_percent', this.value)" />
-            <input type="number" id="wrapped_requests_percent"
-              min="0" max="1" step="0.01" value="0"
-              style="width:58px; padding:4px 6px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:0.8rem;"
-              oninput="syncNumFloat('wrapped_requests_percent', this.value)" />
+        <div class="radio-group" id="task_detection_method_group" style="margin-left:12px;">
+          <div class="radio-option selected" onclick="selectRadio('task_detection_method','user_provided')">
+            <input type="radio" name="task_detection_method" value="user_provided" checked />
+            <label>User Provided</label>
           </div>
-
-          <div class="radio-group" id="task_detection_method_group">
-            <div class="radio-option" onclick="selectRadio('task_detection_method','wrapper_prompt')">
-              <input type="radio" name="task_detection_method" value="wrapper_prompt" />
-              <label>Wrapper Prompt</label>
-            </div>
-            <div class="radio-option selected" onclick="selectRadio('task_detection_method','user_provided')">
-              <input type="radio" name="task_detection_method" value="user_provided" checked />
-              <label>User Provided</label>
-            </div>
+          <div class="radio-option" onclick="selectRadio('task_detection_method','wrapper_prompt')">
+            <input type="radio" name="task_detection_method" value="wrapper_prompt" />
+            <label>Wrapper Prompt</label>
           </div>
+        </div>
+        <!-- Wrapped Requests Percent inline slider -->
+        <div id="wrapped_requests_header" style="margin-left:16px; display:flex; align-items:center; gap:8px; opacity:0.35; pointer-events:none; transition:opacity 0.2s;">
+          <span style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap;">
+            Wrapped Requests
+            <span class="value-badge" id="wrapped_requests_percent_badge" style="margin-left:4px;">0%</span>
+          </span>
+          <input type="range" id="wrapped_requests_percent_slider"
+            min="0" max="1" step="0.01" value="0"
+            style="width:110px;"
+            oninput="syncSliderFloat('wrapped_requests_percent', this.value)" />
+          <input type="number" id="wrapped_requests_percent"
+            min="0" max="1" step="0.01" value="0"
+            style="width:58px; padding:4px 6px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:0.8rem;"
+            oninput="syncNumFloat('wrapped_requests_percent', this.value)" />
         </div>
       </div>
       <div id="task_detection_body" class="section-body" style="display:grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 14px; transition: opacity 0.2s; opacity: 0.35; pointer-events: none;">
@@ -876,6 +877,7 @@ function getConfig() {
       wrapped_requests_percent: parseFloat(document.getElementById('wrapped_requests_percent').value) || 0,
       output:                   document.getElementById('token_output').value,
       wrapped_output:           document.getElementById('wrapped_output').value,
+      use_case:                 document.getElementById('use_case_select').value,
     },
     dev: {
       model_dev_costs: parseFloat(document.getElementById('model_dev_costs').value) || 0,
@@ -887,6 +889,9 @@ function getConfig() {
 }
 
 function update() {
+  if (!_applyingScenario) {
+    document.getElementById('scenario-select').value = '';
+  }
   const cfg = getConfig();
   renderModelTable(cfg.models.large_model, cfg.models.small_model);
   updateChart(cfg);
@@ -948,6 +953,34 @@ function renderModelTable(selectedLarge, selectedSmall) {
       <td style="text-align:center;">${delBtn}</td>
     </tr>`;
   }).join('');
+}
+
+let USE_CASE_DATA = {};
+
+async function loadUseCases() {
+  try {
+    const res = await fetch('/api/use-cases');
+    if (!res.ok) return;
+    USE_CASE_DATA = await res.json();
+    const sel = document.getElementById('use_case_select');
+    Object.keys(USE_CASE_DATA).forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = key;
+      sel.appendChild(opt);
+    });
+  } catch (_) {}
+}
+
+function onUseCaseSelect() {
+  const val = document.getElementById('use_case_select').value;
+  if (val && USE_CASE_DATA[val]) {
+    const uc = USE_CASE_DATA[val];
+    if (uc.input  !== undefined) document.getElementById('token_input').value  = uc.input;
+    if (uc.prompt !== undefined) document.getElementById('token_prompt').value  = uc.prompt;
+    if (uc.output !== undefined) document.getElementById('token_output').value  = uc.output;
+  }
+  update();
 }
 
 async function loadModelData() {
@@ -1021,7 +1054,8 @@ async function removeCustomModel(value) {
 // Scenarios
 // ═══════════════════════════════════════════════════════════════════════════
 
-let SCENARIOS = [];  // [{key, config}, ...]
+let SCENARIOS = [];        // [{key, config}, ...]
+let _applyingScenario = false;
 
 async function loadScenarioList() {
   try {
@@ -1030,7 +1064,7 @@ async function loadScenarioList() {
     SCENARIOS = await res.json();
     const sel = document.getElementById('scenario-select');
     const prev = sel.value;
-    sel.innerHTML = '<option value="" disabled>— load scenario —</option>';
+    sel.innerHTML = '<option value="">— Custom —</option>';
     SCENARIOS.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.key;
@@ -1047,6 +1081,7 @@ async function loadScenarioList() {
 }
 
 function applyScenarioConfig(d) {
+  _applyingScenario = true;
   setFormValues({
     large_model:                 d.models.large_model,
     small_model:                 d.models.small_model,
@@ -1059,9 +1094,11 @@ function applyScenarioConfig(d) {
     wrapped_requests_percent:    d.tokens.wrapped_requests_percent,
     token_output:                d.tokens.output,
     wrapped_output:              d.tokens.wrapped_output,
+    use_case:                    d.tokens.use_case ?? '',
     model_dev_costs:             d.dev.model_dev_costs,
     validation_requests_percent: d.validation.validation_requests_percent,
   });
+  _applyingScenario = false;
 }
 
 function loadScenario() {
@@ -1159,6 +1196,7 @@ function setFormValues(v) {
 
   document.getElementById('token_output').value = v.token_output;
   document.getElementById('wrapped_output').value = v.wrapped_output;
+  document.getElementById('use_case_select').value = v.use_case ?? '';
 
   document.getElementById('model_dev_costs').value = v.model_dev_costs;
   document.getElementById('model_dev_costs_slider').value = v.model_dev_costs;
@@ -1179,9 +1217,8 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ── Init
-loadModelData().then(() => update());
-loadScenarioList();
+// ── Init — load models + use-cases first, then scenarios (so selects are populated)
+Promise.all([loadModelData(), loadUseCases()]).then(() => loadScenarioList());
 </script>
 </body>
 </html>

@@ -160,6 +160,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             # Return as list of {key, config} so order is preserved
             payload = [{"key": k, "config": v} for k, v in scenarios.items()]
             self._send(200, "application/json", json.dumps(payload).encode())
+        elif self.path == "/api/use-cases":
+            uc_path = ROOT / "use_cases.json"
+            data = json.loads(uc_path.read_text()) if uc_path.exists() else {}
+            self._send(200, "application/json", json.dumps(data).encode())
         else:
             self._send(404, "text/plain", b"Not found")
 
