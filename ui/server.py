@@ -30,7 +30,8 @@ import cost_break_even.price_estimation as pe
 from cost_break_even.price_estimation import single_model_price, poodle_price, MODEL_PRICING_PER_1M, INPUT, OUTPUT
 
 SCENARIOS_PATH     = ROOT / "scenarios.json"
-CUSTOM_MODELS_PATH = ROOT / "custom_models.json"
+CUSTOM_MODELS_PATH   = ROOT  / "custom_models.json"
+MEASURED_RESULTS_CSV = REPO_ROOT / "demo" / "measured-results.csv"
 
 # ── Scenario persistence ───────────────────────────────────────────────────
 
@@ -134,6 +135,29 @@ def scenario_from_dict(data: dict) -> DemoScenario:
     )
 
 
+def _load_measured_results() -> list[dict]:
+    """Parse demo/measured-results.csv into a list of row dicts."""
+    import csv
+    if not MEASURED_RESULTS_CSV.exists():
+        return []
+    rows = []
+    with open(MEASURED_RESULTS_CSV, newline="") as f:
+        for row in csv.DictReader(f):
+            # Coerce numeric fields; keep "None" as null
+            for key in ("switch_req", "dev_time"):
+                try:
+                    row[key] = int(row[key])
+                except (ValueError, KeyError):
+                    row[key] = None
+            for key in ("accuracy", "items-per-second", "throughput-1m"):
+                try:
+                    row[key] = float(row[key])
+                except (ValueError, KeyError):
+                    row[key] = None
+            rows.append(row)
+    return rows
+
+
 # ── HTTP handler ───────────────────────────────────────────────────────────
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -164,6 +188,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             uc_path = ROOT / "use_cases.json"
             data = json.loads(uc_path.read_text()) if uc_path.exists() else {}
             self._send(200, "application/json", json.dumps(data).encode())
+        elif self.path == "/api/measured-results":
+            rows = _load_measured_results()
+            self._send(200, "application/json", json.dumps(rows).encode())
         else:
             self._send(404, "text/plain", b"Not found")
 

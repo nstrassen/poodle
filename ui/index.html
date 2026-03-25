@@ -723,6 +723,40 @@ const NO_DATA_LAYOUT = {
   }],
 };
 
+// ── Measured-results lookup ─────────────────────────────────────────────────
+
+async function loadMeasuredResults() {
+  try {
+    const res = await fetch('/api/measured-results');
+    if (res.ok) MEASURED_RESULTS = await res.json();
+  } catch (_) {}
+}
+
+function updateAccuracy() {
+  const largeModel  = document.getElementById('large_model')?.value  ?? '';
+  const smallModel  = document.getElementById('small_model')?.value  ?? '';
+  const useCase     = document.getElementById('use_case_select')?.value ?? '';
+  const devApproach = document.getElementById('dev_approach')?.value ?? '';
+
+  const llmRow = MEASURED_RESULTS.find(r =>
+    r.model === largeModel && r.use_case === useCase
+  );
+
+  const poodleRow = MEASURED_RESULTS.find(r =>
+    r.model       === smallModel  &&
+    r.use_case    === useCase     &&
+    r.dev_approach === devApproach
+  );
+
+  const fmt = v => (v !== null && v !== undefined) ? v.toFixed(2) : '???';
+  const fmtIps = v => (v !== null && v !== undefined) ? v.toFixed(0) : '???';
+
+  document.getElementById('stat-llm-accuracy').textContent    = llmRow    ? fmt(llmRow.accuracy)          : '???';
+  document.getElementById('stat-poodle-accuracy').textContent = poodleRow ? fmt(poodleRow.accuracy)       : '???';
+  document.getElementById('stat-ips-llm').textContent         = llmRow    ? fmtIps(llmRow['items-per-second']) : '???';
+  document.getElementById('stat-ips-poodle').textContent      = poodleRow ? fmtIps(poodleRow['items-per-second']) : '???';
+}
+
 async function updateChart(cfg) {
   const result = await fetchCostSeries(cfg);
 
@@ -919,6 +953,7 @@ function update() {
   const cfg = getConfig();
   renderModelTable(cfg.models.large_model, cfg.models.small_model);
   updateChart(cfg);
+  updateAccuracy();
 }
 
 
@@ -927,7 +962,8 @@ function update() {
 // Model pricing table
 // ═══════════════════════════════════════════════════════════════════════════
 
-let MODEL_DATA = [];   // [{value, name, provider, input, output}, …]
+let MODEL_DATA       = [];   // [{value, name, provider, input, output}, …]
+let MEASURED_RESULTS = [];   // rows from measured-results.csv
 
 function providerBadge(provider) {
   const cls = provider === 'OpenAI'      ? 'badge-openai'
@@ -1244,7 +1280,7 @@ function showToast(msg) {
 }
 
 // ── Init — load models + use-cases first, then scenarios (so selects are populated)
-Promise.all([loadModelData(), loadUseCases()]).then(() => loadScenarioList());
+Promise.all([loadModelData(), loadUseCases(), loadMeasuredResults()]).then(() => loadScenarioList());
 </script>
 </body>
 </html>
