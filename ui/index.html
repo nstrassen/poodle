@@ -78,14 +78,15 @@
       border-bottom: 1px solid var(--border);
       padding: 12px 20px 10px;
       display: flex;
-      gap: 16px;
-      align-items: stretch;
+      gap: 24px;
+      align-items: center;
     }
 
     #cost-chart, #savings-chart {
       flex: 1;
       min-width: 0;
       height: 220px;
+      padding: 0 8px;
     }
 
     /* hide Plotly's default white modebar background */
@@ -108,20 +109,19 @@
       text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px;
     }
     .stat-card .stat-value {
-      font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums;
     }
     .stat-card .stat-value.green  { color: var(--green); }
     .stat-card .stat-value.accent { color: var(--accent); }
-    .stat-card .stat-value.muted  { color: var(--text-muted); font-size: 0.85rem; }
+    .stat-card .stat-value.muted  { color: var(--text-muted); }
 
     /* Comparison table inside stat panel */
     .cmp-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.8rem;
     }
     .cmp-table th {
-      font-size: 0.68rem;
+      font-size: 0.7rem;        /* matches .stat-label */
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -133,6 +133,7 @@
     .cmp-table td {
       padding: 4px 6px;
       text-align: center;
+      font-size: 1.2rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       border-top: 1px solid var(--border);
@@ -140,8 +141,10 @@
     .cmp-table td.row-hdr {
       text-align: left;
       font-weight: 400;
+      font-size: 0.7rem;
       color: var(--text-muted);
-      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
     .cmp-table .col-llm   { color: var(--accent); }
     .cmp-table .col-poodle { color: var(--green); }
@@ -444,16 +447,16 @@
   <div class="form-panel">
 
     <!-- Model Prices (left) + Models / Requests (right) row -->
-    <div style="display:grid; grid-template-columns: subgrid; row-gap:18px; grid-column: 1 / -1;">
+    <div style="display:grid; grid-template-columns: subgrid; grid-column: 1 / -1;">
 
-      <!-- Model Prices: left side, spans both rows -->
-      <div class="section" style="grid-column: 1 / -2; grid-row: 1 / 3;">
+      <!-- Model Prices: all columns except the last -->
+      <div class="section" style="grid-column: 1 / -2; display:flex; flex-direction:column; align-self:start;">
         <div class="section-header">
           <div class="icon">💰</div>
           <h2>Model Prices</h2>
         </div>
-        <div class="section-body">
-          <div style="max-height: 220px; overflow-y: auto; border-radius: 6px; border: 1px solid var(--border);">
+        <div class="section-body" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+          <div style="max-height:200px; overflow-y: auto; border-radius: 6px; border: 1px solid var(--border);">
             <table class="model-table" id="model-pricing-table" style="margin-top: 0;">
               <thead style="position: sticky; top: 0; z-index: 1; background: var(--surface2);">
                 <tr>
@@ -480,63 +483,66 @@
         </div>
       </div>
 
-      <!-- Models: right side, top row -->
-      <div class="section">
-        <div class="section-header">
-          <div class="icon">🤖</div>
-          <h2>Models</h2>
-        </div>
-        <div class="section-body">
-          <div class="field-row">
-            <div class="field">
-              <label>Large Model</label>
-              <select id="large_model" onchange="update()"></select>
-            </div>
-            <div class="field">
-              <label>Small Model</label>
-              <select id="small_model" onchange="updateDevCost(); update()"></select>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Right column: Models stacked above Requests with a fixed 18 px gap -->
+      <div style="grid-column: -2 / -1; display:flex; flex-direction:column; gap:18px;">
 
-      <!-- Requests: right side, bottom row -->
-      <div class="section">
-        <div class="section-header">
-          <div class="icon">📊</div>
-          <h2>Requests</h2>
-        </div>
-        <div class="section-body">
-          <div class="field">
-            <label>
-              Expected Requests
-              <span class="value-badge" id="expected_requests_badge">1,000,000</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="expected_requests_slider"
-                min="1000" max="10000000" step="1000" value="1000000"
-                oninput="syncSlider('expected_requests', this.value)" />
-              <input type="number" id="expected_requests" min="1" value="1000000"
-                oninput="syncNum('expected_requests', this.value)" />
-            </div>
-            <div class="hint">Total number of API requests expected in the scenario</div>
+        <!-- Models -->
+        <div class="section">
+          <div class="section-header">
+            <div class="icon">🤖</div>
+            <h2>Models</h2>
           </div>
-          <div class="field">
-            <label>
-              Switch After N Items
-              <span class="value-badge" id="switch_after_n_items_badge">5,000</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="switch_after_n_items_slider"
-                min="100" max="1000000" step="100" value="5000"
-                oninput="syncSlider('switch_after_n_items', this.value)" />
-              <input type="number" id="switch_after_n_items" min="1" value="5000"
-                oninput="syncNum('switch_after_n_items', this.value)" />
+          <div class="section-body" style="padding:10px 14px;">
+            <div class="field-row">
+              <div class="field">
+                <label>Large Model</label>
+                <select id="large_model" onchange="update()"></select>
+              </div>
+              <div class="field">
+                <label>Small Model</label>
+                <select id="small_model" onchange="updateDevCost(); update()"></select>
+              </div>
             </div>
-            <div class="hint">Switch from large to small model after this many items</div>
           </div>
         </div>
-      </div>
+
+        <!-- Requests -->
+        <div class="section">
+          <div class="section-header">
+            <div class="icon">📊</div>
+            <h2>Requests</h2>
+          </div>
+          <div class="section-body" style="gap:8px; padding:10px 14px;">
+            <div class="field">
+              <label>
+                Expected Requests
+                <span class="value-badge" id="expected_requests_badge">1,000,000</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="expected_requests_slider"
+                  min="1000" max="10000000" step="1000" value="1000000"
+                  oninput="syncSlider('expected_requests', this.value)" />
+                <input type="number" id="expected_requests" min="1" value="1000000"
+                  oninput="syncNum('expected_requests', this.value)" />
+              </div>
+            </div>
+            <div class="field">
+              <label>
+                Switch After N Requests
+                <span class="value-badge" id="switch_after_n_items_badge">5,000</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="switch_after_n_items_slider"
+                  min="100" max="1000000" step="100" value="5000"
+                  oninput="syncSlider('switch_after_n_items', this.value)" />
+                <input type="number" id="switch_after_n_items" min="1" value="5000"
+                  oninput="syncNum('switch_after_n_items', this.value)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end right flex column -->
 
     </div><!-- end model prices row -->
 
@@ -577,7 +583,7 @@
         <div class="section-header">
           <div class="icon">🔧</div>
           <h2>Model Development</h2>
-          <select id="dev_approach" style="margin-left:10px; padding:4px 8px; font-size:0.82rem;" onchange="updateDevCost(); update()">
+          <select id="dev_approach" style="margin-left:auto; padding:3px 7px; font-size:0.78rem; width:82px;" onchange="updateDevCost(); update()">
             <option value="base">base</option>
             <option value="s-naive">s-naive</option>
             <option value="s-500">s-500</option>
@@ -703,13 +709,16 @@
 const PLOT_EL      = document.getElementById('cost-chart');
 const SAVINGS_EL   = document.getElementById('savings-chart');
 
+const CHART_FONT = { family: 'Inter, system-ui, sans-serif', color: '#7a85a8', size: 11 };
+
 const PLOT_LAYOUT = {
   paper_bgcolor: 'transparent',
   plot_bgcolor:  '#12151e',
-  margin: { t: 10, r: 10, b: 40, l: 60 },
-  font:   { family: 'Inter, system-ui, sans-serif', color: '#7a85a8', size: 11 },
+  margin: { t: 28, r: 10, b: 40, l: 60 },
+  font: CHART_FONT,
   xaxis: {
-    title: { text: 'Requests', standoff: 6 },
+    title:    { text: 'Requests', standoff: 6, font: CHART_FONT },
+    tickfont: CHART_FONT,
     gridcolor:    '#1e2236',
     linecolor:    '#2e3352',
     tickcolor:    '#2e3352',
@@ -720,7 +729,8 @@ const PLOT_LAYOUT = {
     spikedash:    'dot',
   },
   yaxis: {
-    title: { text: 'Cost (USD)', standoff: 6 },
+    title:    { text: 'Cost (USD)', standoff: 6, font: CHART_FONT },
+    tickfont: CHART_FONT,
     gridcolor:  '#1e2236',
     linecolor:  '#2e3352',
     tickcolor:  '#2e3352',
@@ -733,13 +743,15 @@ const PLOT_LAYOUT = {
   },
   legend: {
     x: 0.02, y: 0.98,
+    font: CHART_FONT,
     bgcolor: 'rgba(26,29,39,0.8)',
     bordercolor: '#2e3352', borderwidth: 1,
   },
+  title: { text: 'Cost Comparison', font: { ...CHART_FONT, size: 14, color: '#c8cee8' }, x: 0.5, xanchor: 'center', y: 0.98, yanchor: 'top' },
   hovermode: 'x unified',
   hoverlabel: {
     bgcolor: '#1a1d27', bordercolor: '#2e3352',
-    font: { color: '#e2e6f3', size: 11 },
+    font: { ...CHART_FONT, color: '#e2e6f3' },
   },
 };
 
@@ -752,9 +764,10 @@ const PLOT_CONFIG = {
 
 const SAVINGS_LAYOUT = {
   ...PLOT_LAYOUT,
+  title: { text: 'Cost Savings', font: { ...CHART_FONT, size: 14, color: '#c8cee8' }, x: 0.5, xanchor: 'center', y: 0.98, yanchor: 'top' },
   yaxis: {
     ...PLOT_LAYOUT.yaxis,
-    title: { text: 'Savings (USD)', standoff: 6 },
+    title: { text: 'Savings (USD)', standoff: 6, font: CHART_FONT },
     zeroline: true,
     zerolinecolor: '#3d4f8a',
     zerolinewidth: 1,
@@ -866,13 +879,13 @@ async function updateChart(cfg) {
   // ── Cost comparison chart ──
   const costTraces = [
     {
-      name: 'Large model only',
+      name: 'LLM',
       x: requests, y: base_prices,
       mode: 'lines',
       line: { color: '#f87171', width: 2 },
       fill: 'tonexty',
       fillcolor: 'rgba(74,222,128,0.10)',
-      hovertemplate: '%{y:$.3s}<extra>Large model only</extra>',
+      hovertemplate: '%{y:$.3s}<extra>LLM</extra>',
     },
     {
       name: 'Poodle',
