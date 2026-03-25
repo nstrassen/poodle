@@ -751,10 +751,16 @@ function updateAccuracy() {
   const fmt = v => (v !== null && v !== undefined) ? v.toFixed(2) : '???';
   const fmtIps = v => (v !== null && v !== undefined) ? v.toFixed(0) : '???';
 
-  document.getElementById('stat-llm-accuracy').textContent    = llmRow    ? fmt(llmRow.accuracy)          : '???';
-  document.getElementById('stat-poodle-accuracy').textContent = poodleRow ? fmt(poodleRow.accuracy)       : '???';
+  document.getElementById('stat-llm-accuracy').textContent    = llmRow    ? fmt(llmRow.accuracy)               : '???';
+  document.getElementById('stat-poodle-accuracy').textContent = poodleRow ? fmt(poodleRow.accuracy)            : '???';
   document.getElementById('stat-ips-llm').textContent         = llmRow    ? fmtIps(llmRow['items-per-second']) : '???';
   document.getElementById('stat-ips-poodle').textContent      = poodleRow ? fmtIps(poodleRow['items-per-second']) : '???';
+
+  const devTimeSec = poodleRow?.dev_time;
+  document.getElementById('stat-earliest-switch').textContent =
+    (devTimeSec !== null && devTimeSec !== undefined && devTimeSec >= 0)
+      ? (devTimeSec / 60).toFixed(1) + ' min'
+      : '???';
 }
 
 async function updateChart(cfg) {
