@@ -572,9 +572,9 @@
               </label>
               <div class="slider-row">
                 <input type="range" id="switch_after_n_items_slider"
-                  min="100" max="1000000" step="100" value="5000"
+                  min="0" max="100000" step="100" value="5000"
                   oninput="syncSlider('switch_after_n_items', this.value)" />
-                <input type="number" id="switch_after_n_items" min="1" value="5000"
+                <input type="number" id="switch_after_n_items" min="0" max="100000" value="5000"
                   oninput="syncNum('switch_after_n_items', this.value)" />
               </div>
             </div>
@@ -595,6 +595,7 @@
           <div class="icon">✏️</div>
           <h2>Use Case</h2>
           <select id="use_case_select" onchange="onUseCaseSelect()" style="margin-left:10px; padding:4px 8px; font-size:0.82rem; width:20ch; flex-shrink:0;">
+            <option value="none">— None —</option>
             <option value="">Custom</option>
           </select>
         </div>
@@ -642,7 +643,7 @@
               </label>
               <div class="slider-row">
                 <input type="range" id="model_dev_costs_slider"
-                  min="0" max="500" step="0.5" value="4.0"
+                  min="0" max="50" step="0.1" value="4.0"
                   oninput="syncSliderFloat('model_dev_costs', this.value)" />
                 <input type="number" id="model_dev_costs" min="0" step="0.5" value="4.0"
                   oninput="syncNumFloat('model_dev_costs', this.value)" />
@@ -681,7 +682,7 @@
     </div><!-- end row -->
 
     <!-- Task Detection -->
-    <div class="section wide" style="position:relative;">
+    <div class="section wide" style="position:relative; grid-column: 1 / -2;">
       <span class="info-icon" style="position:absolute; top:10px; right:10px;">i<span class="info-tooltip">Configures how Poodle detects the task type. Wrapper Prompt adds an extra LLM call; User Provided skips it entirely.</span></span>
       <div class="section-header">
         <div class="icon">🔀</div>
@@ -693,15 +694,12 @@
           </div>
           <div class="radio-option" onclick="selectRadio('task_detection_method','wrapper_prompt')">
             <input type="radio" name="task_detection_method" value="wrapper_prompt" />
-            <label>Wrapper Prompt</label>
+            <label>Wrapped Requests</label>
           </div>
         </div>
         <!-- Wrapped Requests Percent inline slider -->
         <div id="wrapped_requests_header" style="margin-left:16px; display:flex; align-items:center; gap:8px; opacity:0.35; pointer-events:none; transition:opacity 0.2s;">
-          <span style="font-size:0.78rem; color:var(--text-muted); white-space:nowrap;">
-            Wrapped Requests
-            <span class="value-badge" id="wrapped_requests_percent_badge" style="margin-left:4px;">0%</span>
-          </span>
+          <span class="value-badge" id="wrapped_requests_percent_badge">0%</span>
           <input type="range" id="wrapped_requests_percent_slider"
             min="0" max="1" step="0.01" value="0"
             style="width:110px;"
@@ -856,6 +854,14 @@ async function loadMeasuredResults() {
 function updateAccuracy() {
   const largeModel  = document.getElementById('large_model')?.value  ?? '';
   const smallModel  = document.getElementById('small_model')?.value  ?? '';
+  if (largeModel === 'none' || smallModel === 'none') {
+    ['stat-llm-accuracy','stat-poodle-accuracy',
+     'stat-ips-llm','stat-ips-poodle','stat-earliest-switch'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    return;
+  }
   const useCase     = document.getElementById('use_case_select')?.value ?? '';
   const devApproach = document.getElementById('dev_approach')?.value ?? '';
 
@@ -908,7 +914,22 @@ function updateDevCost() {
   }
 }
 
+function clearPlotsAndStats() {
+  Plotly.react(PLOT_EL,    [], NO_DATA_LAYOUT,                           PLOT_CONFIG);
+  Plotly.react(SAVINGS_EL, [], { ...NO_DATA_LAYOUT, ...SAVINGS_LAYOUT }, PLOT_CONFIG);
+  ['stat-savings','stat-savings-pct','stat-breakeven',
+   'stat-llm-accuracy','stat-poodle-accuracy',
+   'stat-ips-llm','stat-ips-poodle','stat-earliest-switch'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+}
+
 async function updateChart(cfg) {
+  if (cfg.models.large_model === 'none' || cfg.models.small_model === 'none') {
+    clearPlotsAndStats();
+    return;
+  }
   const result = await fetchCostSeries(cfg);
 
   if (!result) {
@@ -1128,8 +1149,8 @@ function rebuildSelects(prevLarge, prevSmall) {
   const smallEl = document.getElementById('small_model');
   const savedLarge = prevLarge ?? largeEl.value;
   const savedSmall = prevSmall ?? smallEl.value;
-  largeEl.innerHTML = '';
-  smallEl.innerHTML = '';
+  largeEl.innerHTML = '<option value="none">— None —</option>';
+  smallEl.innerHTML = '<option value="none">— None —</option>';
   MODEL_DATA.forEach(m => {
     largeEl.insertAdjacentHTML('beforeend', `<option value="${m.value}">${m.name}</option>`);
     smallEl.insertAdjacentHTML('beforeend', `<option value="${m.value}">${m.name}</option>`);
@@ -1185,7 +1206,11 @@ async function loadUseCases() {
 
 function onUseCaseSelect() {
   const val = document.getElementById('use_case_select').value;
-  if (val && USE_CASE_DATA[val]) {
+  if (val === 'none') {
+    document.getElementById('token_input').value  = '';
+    document.getElementById('token_prompt').value = '';
+    document.getElementById('token_output').value = '';
+  } else if (val && USE_CASE_DATA[val]) {
     const uc = USE_CASE_DATA[val];
     if (uc.input  !== undefined) document.getElementById('token_input').value  = uc.input;
     if (uc.prompt !== undefined) document.getElementById('token_prompt').value  = uc.prompt;
