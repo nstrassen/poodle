@@ -1,3 +1,4 @@
+import math
 from dataclasses import replace
 from demo.demo_config import DemoScenario, Model
 from demo.token_count_estimation import num_tokens
@@ -115,6 +116,39 @@ def poodle_price(config: DemoScenario):
     model_search_and_dev_cost = config.dev.model_dev_costs
 
     return first_n_cost + small_model_cost + monitoring_cost + model_search_and_dev_cost
+
+
+def analytical_break_even(config: DemoScenario):
+    """Return the exact break-even request count N₀ where poodle becomes cheaper,
+    or None if poodle never becomes cheaper.
+
+    Derived by solving C_baseline(N) = C_poodle(N) analytically for N > N*:
+
+        N₀ = [ N* · (A·(1-α-β) + α·B - S) + C_dev ] / (A·(1-β) - S)
+
+    where A = large model cost/req (non-wrapped), B = large model cost/req (wrapped),
+    S = small model cost/req, α = wrapped_requests_percent, β = validation_requests_percent.
+    """
+    N_star = config.requests.switch_after_n_items
+    alpha  = config.tokens.wrapped_requests_percent
+    beta   = config.validation.validation_requests_percent
+    C_dev  = config.dev.model_dev_costs
+
+    A = single_model_price_per_request(config.models.large_model, config, wrapped=False)
+    B = single_model_price_per_request(config.models.large_model, config, wrapped=True)
+    S = single_model_price_per_request(config.models.small_model, config, wrapped=False)
+
+    denom = A * (1 - beta) - S
+    if denom <= 0:
+        return None  # small model is not cheaper per request — poodle never wins
+
+    numer = N_star * (A * (1 - alpha - beta) + alpha * B - S) + C_dev
+    N_0 = numer / denom
+
+    if N_0 <= 0:
+        return 0  # already cheaper from the first request
+
+    return math.ceil(N_0)
 
 
 def compare_single_model_and_poodle(config: DemoScenario):

@@ -999,9 +999,11 @@ async function updateChart(cfg) {
   document.getElementById('stat-savings-pct').textContent =
     (lastSaving >= 0 ? '+' : '') + savingPct.toFixed(1) + '%';
 
-  const beIdx = poodle_savings.findIndex(s => s > 0);
+  const be = result.break_even;
   document.getElementById('stat-breakeven').textContent =
-    beIdx >= 0 ? fmtReqs(requests[beIdx]) + ' reqs' : 'never';
+    be === null || be === undefined ? 'never'
+    : be === 0                      ? '0 reqs'
+    :                                 fmtReqs(be) + ' reqs';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

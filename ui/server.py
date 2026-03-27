@@ -27,7 +27,10 @@ from demo.demo_config import (
     Model, TaskDetectionMethod,
 )
 import cost_break_even.price_estimation as pe
-from cost_break_even.price_estimation import single_model_price, poodle_price, MODEL_PRICING_PER_1M, INPUT, OUTPUT
+from cost_break_even.price_estimation import (
+    single_model_price, poodle_price, MODEL_PRICING_PER_1M,
+    INPUT, OUTPUT, analytical_break_even,
+)
 
 SCENARIOS_PATH     = ROOT / "scenarios.json"
 CUSTOM_MODELS_PATH   = ROOT  / "custom_models.json"
@@ -240,6 +243,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 "base_prices":    base_list,
                 "poodle_prices":  poodle_list,
                 "poodle_savings": savings_list,
+                "break_even":     analytical_break_even(scenario),
             }
             self._send(200, "application/json", json.dumps(result).encode())
         except Exception as e:
