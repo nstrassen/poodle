@@ -81,10 +81,9 @@
       gap: 24px;
       align-items: center;
     }
+    .chart-stats { flex-shrink: 0; }
 
     #cost-chart, #savings-chart {
-      flex: 1;
-      min-width: 0;
       height: 220px;
       padding: 0 8px;
     }
@@ -405,22 +404,27 @@
 <header>
   <div class="logo">🐩 Poodle</div>
   <div class="subtitle">Just-in-time Model Replacement</div>
-  <div class="actions">
-    <!-- Scenario picker -->
-    <select id="scenario-select" class="scenario-select" onchange="loadScenario()">
-      <option value="">— Custom —</option>
-    </select>
-    <button class="btn btn-ghost btn-icon" title="Delete scenario" onclick="deleteScenario()">🗑</button>
-
-    <div class="actions-divider"></div>
-    <button class="btn btn-success" onclick="saveConfig()">💾 Save</button>
-  </div>
+  <div class="actions"></div>
 </header>
 
 <!-- ── Chart ─────────────────────────────────────────────────────────────── -->
 <div class="chart-section">
-  <div id="cost-chart"></div>
-  <div id="savings-chart"></div>
+
+  <!-- plots column: scenario bar on top, charts below -->
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <select id="scenario-select" class="scenario-select" onchange="loadScenario()">
+        <option value="">— Custom —</option>
+      </select>
+      <button class="btn btn-ghost btn-icon" title="Delete scenario" onclick="deleteScenario()">🗑</button>
+      <div class="actions-divider"></div>
+      <button class="btn btn-success btn-icon" title="Save scenario" onclick="saveConfig()">💾</button>
+    </div>
+    <div style="display:flex; gap:24px; align-items:center;">
+      <div id="cost-chart" style="flex:1; min-width:0;"></div>
+      <div id="savings-chart" style="flex:1; min-width:0;"></div>
+    </div>
+  </div>
   <div class="chart-stats" style="display:flex; flex-direction:column; gap:8px; justify-content:center;">
 
     <!-- 1 · Value proposition -->
@@ -437,6 +441,20 @@
     </div>
 
     <!-- 2 · Quality trade-off -->
+    <!-- 2 · Timeline -->
+    <div class="stat-section-label">Timeline</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div class="stat-card">
+        <div class="stat-label">Break-even</div>
+        <div class="stat-value muted" id="stat-breakeven">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Earliest switch</div>
+        <div class="stat-value muted" id="stat-earliest-switch">—</div>
+      </div>
+    </div>
+
+    <!-- 3 · Trade-off -->
     <div class="stat-section-label">Trade-off</div>
     <div class="stat-card" style="padding:8px 10px;">
       <table class="cmp-table">
@@ -460,19 +478,6 @@
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <!-- 3 · Timeline -->
-    <div class="stat-section-label">Timeline</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <div class="stat-card">
-        <div class="stat-label">Break-even</div>
-        <div class="stat-value muted" id="stat-breakeven">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Earliest switch</div>
-        <div class="stat-value muted" id="stat-earliest-switch">—</div>
-      </div>
     </div>
 
   </div>
@@ -753,7 +758,7 @@
 const PLOT_EL      = document.getElementById('cost-chart');
 const SAVINGS_EL   = document.getElementById('savings-chart');
 
-const CHART_FONT = { family: 'Inter, system-ui, sans-serif', color: '#7a85a8', size: 11 };
+const CHART_FONT = { family: 'Inter, system-ui, sans-serif', color: '#7a85a8', size: 13 };
 
 const PLOT_LAYOUT = {
   paper_bgcolor: 'transparent',
@@ -962,6 +967,7 @@ async function updateChart(cfg) {
       hovertemplate: '%{y:$.3s}<extra>Poodle</extra>',
     },
   ];
+  // If the scenario specifies a zoom, use it; otherwise preserve user's zoom
   Plotly.react(PLOT_EL, costTraces, {
     ...PLOT_LAYOUT, annotations: [],
     xaxis: { ...PLOT_LAYOUT.xaxis, range: PLOT_EL.layout?.xaxis?.range },
@@ -982,11 +988,37 @@ async function updateChart(cfg) {
       hovertemplate: '%{y:$.3s}<extra>Savings</extra>',
     },
   ];
+
   Plotly.react(SAVINGS_EL, savingsTraces, {
     ...SAVINGS_LAYOUT, annotations: [],
     xaxis: { ...SAVINGS_LAYOUT.xaxis, range: SAVINGS_EL.layout?.xaxis?.range },
     yaxis: { ...SAVINGS_LAYOUT.yaxis, range: SAVINGS_EL.layout?.yaxis?.range },
   }, PLOT_CONFIG);
+
+  // Apply scenario zoom AFTER react so it always wins
+  if (_scenarioPlotXMax !== null || _scenarioPlotYMax !== null) {
+    const base = {};
+    if (_scenarioPlotXMax !== null) {
+      base['xaxis.range']     = [0, _scenarioPlotXMax];
+      base['xaxis.autorange'] = false;
+    }
+    if (_scenarioPlotYMax !== null) {
+      base['yaxis.range']     = [0, _scenarioPlotYMax];
+      base['yaxis.autorange'] = false;
+    }
+    Plotly.relayout(PLOT_EL, base);
+
+    // Savings plot: same x, but may have its own y-min
+    const savingsUpdate = { ...base };
+    if (_scenarioSavingsYMin !== null && _scenarioPlotYMax !== null) {
+      savingsUpdate['yaxis.range']     = [_scenarioSavingsYMin, _scenarioPlotYMax];
+      savingsUpdate['yaxis.autorange'] = false;
+    } else if (_scenarioSavingsYMin !== null) {
+      savingsUpdate['yaxis.range']     = [_scenarioSavingsYMin, SAVINGS_EL.layout?.yaxis?.range?.[1] ?? 0];
+      savingsUpdate['yaxis.autorange'] = false;
+    }
+    Plotly.relayout(SAVINGS_EL, savingsUpdate);
+  }
 
   // Stats
   const n          = requests.length - 1;
@@ -1123,6 +1155,9 @@ function getConfig() {
 function update() {
   if (!_applyingScenario) {
     document.getElementById('scenario-select').value = '';
+    _scenarioPlotXMax    = null;
+    _scenarioPlotYMax    = null;
+    _scenarioSavingsYMin = null;
   }
   const cfg = getConfig();
   renderModelTable(cfg.models.large_model, cfg.models.small_model);
@@ -1294,6 +1329,9 @@ async function removeCustomModel(value) {
 
 let SCENARIOS = [];        // [{key, config}, ...]
 let _applyingScenario = false;
+let _scenarioPlotXMax = null;  // optional x-axis zoom set by scenario
+let _scenarioPlotYMax    = null;  // optional y-axis max for both plots
+let _scenarioSavingsYMin = null;  // optional y-axis min for savings plot only
 
 async function loadScenarioList() {
   try {
@@ -1313,6 +1351,9 @@ async function loadScenarioList() {
       sel.value = prev;
     } else if (SCENARIOS.length) {
       sel.value = SCENARIOS[0].key;
+      _scenarioPlotXMax    = SCENARIOS[0].config.plot_x_max        ?? null;
+      _scenarioPlotYMax    = SCENARIOS[0].config.plot_y_max        ?? null;
+      _scenarioSavingsYMin = SCENARIOS[0].config.plot_savings_y_min ?? null;
       applyScenarioConfig(SCENARIOS[0].config);
     }
   } catch { /* silent */ }
@@ -1345,6 +1386,9 @@ function loadScenario() {
   if (!key) return;
   const entry = SCENARIOS.find(s => s.key === key);
   if (!entry) { showToast('Scenario not found'); return; }
+  _scenarioPlotXMax    = entry.config.plot_x_max        ?? null;
+  _scenarioPlotYMax    = entry.config.plot_y_max        ?? null;
+  _scenarioSavingsYMin = entry.config.plot_savings_y_min ?? null;
   applyScenarioConfig(entry.config);
   showToast(`Loaded: ${key}`);
 }
