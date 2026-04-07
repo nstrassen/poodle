@@ -1,8 +1,4 @@
-# Poodle 
-Poodle: Seamlessly Scaling Down Large Language Models with Just-in-Time Model Replacement
-
-## Experiments
-- [cost_break_even](cost_break_even)
-- [inference time](latency)
-- [accuracy](bert_accuracy)
-- [model_search](model_search)
+# Poodle Demo
+To start the demo:
+- run the script [start.sh](start.sh) which will build and start a docker container
+- open a browser and navigate to http://localhost:8080
